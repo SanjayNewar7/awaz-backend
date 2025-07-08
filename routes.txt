@@ -1,0 +1,6 @@
+
+  GET|HEAD       storage/{path} ................ storage.local
+  GET|HEAD       up .......................................... 
+
+                                            Showing [2] routes
+
