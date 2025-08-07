@@ -11,4 +11,14 @@ Route::prefix('users')->middleware('api')->group(function () {
     Route::put('/{id}', [UserController::class, 'update']);
     Route::delete('/{id}', [UserController::class, 'destroy']);
     Route::get('/search', [UserController::class, 'search']);
+    // routes/api.php
+    Route::post('/users', [AuthController::class, 'store']);
+    Route::post('/register', [AuthController::class, 'store']);
+Route::post('/login', [AuthController::class, 'login']);
+
+// Protected routes
+Route::middleware('auth:api')->group(function () {
+    Route::get('/users', [AuthController::class, 'getUsers']);
+    Route::get('/users/{userId}', [AuthController::class, 'getUser']);
+});
 });

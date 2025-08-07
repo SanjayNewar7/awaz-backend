@@ -14,11 +14,10 @@ class User extends Authenticatable
     protected $keyType = 'int';
 
     protected $fillable = [
-        'username', 'first_name', 'last_name', 'district', 'ward', 'area_name',
-        'phone_number', 'gender', 'email', 'password_hash',
-        'citizenship_front_image', 'citizenship_back_image',
-        'citizenship_id_number', 'is_verified', 'agreed_to_terms',
-        'likes_count', 'posts_count', 'remember_token', 'city' // Add 'city' here
+        'username', 'first_name', 'last_name', 'district', 'city',
+        'ward', 'area_name', 'phone_number', 'gender', 'email', 'password_hash',
+        'citizenship_front_image', 'citizenship_back_image', 'citizenship_id_number',
+        'is_verified', 'agreed_to_terms'
     ];
 
     protected $hidden = [

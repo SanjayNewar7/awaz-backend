@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -20,9 +23,9 @@ class AuthController extends Controller
 
         if ($username === 'admin' && $password === 'admin') {
             return redirect()->route('superadmin.dashboard');
-        } else {
-            return back()->withErrors(['credentials' => 'Invalid username or password'])->withInput();
         }
+
+        return back()->withErrors(['credentials' => 'Invalid username or password'])->withInput();
     }
 
     public function dashboard()
@@ -35,72 +38,170 @@ class AuthController extends Controller
         return redirect()->route('superadmin.login');
     }
 
-    public function getUsers(Request $request)
+    /**
+     * Register a new user
+     */
+    public function store(Request $request)
     {
-        $page = $request->input('page', 1);
-        $limit = $request->input('limit', 10);
-        $offset = ($page - 1) * $limit;
+        try {
+            Log::info('Incoming registration request data: ', $request->all());
+            $validated = $request->validate([
+                'username' => 'required|string|max:50|unique:users',
+                'first_name' => 'required|string|max:50',
+                'last_name' => 'required|string|max:50',
+                'email' => 'required|email|max:100|unique:users',
+                'phone_number' => 'required|string|size:10',
+                'password' => 'required|string|min:8|confirmed',
+                'district' => 'required|string|max:50',
+                'city' => 'required|string|max:50',
+                'ward' => 'required|integer',
+                'area_name' => 'required|string|max:100',
+                'citizenship_id_number' => 'required|string|max:50|unique:users',
+                'gender' => 'required|in:Male,Female,Other',
+                'is_verified' => 'required|boolean',
+                'agreed_to_terms' => 'required|boolean',
+                'citizenship_front_image' => 'required|string', // Base64
+                'citizenship_back_image' => 'required|string' // Base64
+            ]);
 
-        $users = User::skip($offset)->take($limit)->get();
-        $total = User::count();
-        $pages = ceil($total / $limit);
+            $user = User::create([
+                'username' => $validated['username'],
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'email' => $validated['email'],
+                'phone_number' => $validated['phone_number'],
+                'password_hash' => bcrypt($validated['password']),
+                'district' => $validated['district'],
+                'city' => $validated['city'],
+                'ward' => $validated['ward'],
+                'area_name' => $validated['area_name'],
+                'citizenship_id_number' => $validated['citizenship_id_number'],
+                'gender' => $validated['gender'],
+                'is_verified' => $validated['is_verified'],
+                'agreed_to_terms' => $validated['agreed_to_terms'],
+                'citizenship_front_image' => $validated['citizenship_front_image'],
+                'citizenship_back_image' => $validated['citizenship_back_image']
+            ]);
 
-        return response()->json([
-            'users' => $users,
-            'total' => $total,
-            'page' => $page,
-            'pages' => $pages
-        ]);
+            return response()->json(['message' => 'User registered successfully', 'user' => $user], 201);
+        } catch (\Exception $e) {
+            Log::error('Registration error: ' . $e->getMessage());
+            return response()->json(['message' => 'Registration failed', 'error' => $e->getMessage()], 500);
+        }
     }
 
-    public function searchUsers(Request $request)
+    /**
+     * Save base64 image to storage
+     */
+    private function saveBase64Image($base64Image, $pathPrefix)
     {
-        $searchTerm = $request->input('q');
-
-        if (!$searchTerm) {
-            return response()->json(['users' => [], 'message' => 'No search term provided'], 400);
-        }
-
-        Log::info('Search term received: ' . $searchTerm);
-
         try {
-            $users = User::where(function ($query) use ($searchTerm) {
-                $query->where('user_id', '=', $searchTerm) // Exact match for user_id
-                      ->orWhere('username', 'like', '%' . strtolower($searchTerm) . '%') // Case-insensitive username
-                      ->orWhere('phone_number', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('citizenship_id_number', 'like', '%' . $searchTerm . '%');
-            })->get();
-
-            Log::info('Search query executed, found ' . $users->count() . ' users');
-
-            if ($users->isEmpty()) {
-                Log::warning('No users found for search term: ' . $searchTerm);
-                return response()->json(['users' => [], 'message' => 'No user found with that identifier']);
+            if (empty($base64Image)) {
+                throw new \Exception('Empty image data');
             }
 
-            return response()->json(['users' => $users]);
+            if (strpos($base64Image, ';base64,') !== false) {
+                list(, $base64Image) = explode(';', $base64Image);
+                list(, $base64Image) = explode(',', $base64Image);
+            }
+
+            $imageData = base64_decode($base64Image);
+            if ($imageData === false) {
+                throw new \Exception('Invalid base64 image data');
+            }
+
+            if (@imagecreatefromstring($imageData) === false) {
+                throw new \Exception('Invalid image format');
+            }
+
+            $filename = $pathPrefix . uniqid() . '.jpg';
+            $storagePath = 'public/images/' . $filename;
+
+            if (!Storage::put($storagePath, $imageData)) {
+                throw new \Exception('Failed to save image to storage');
+            }
+
+            return 'images/' . $filename;
         } catch (\Exception $e) {
-            Log::error('Search error: ' . $e->getMessage());
-            return response()->json(['users' => [], 'message' => 'Error searching users: ' . $e->getMessage()], 500);
+            Log::error('Image processing error: ' . $e->getMessage());
+            throw $e;
         }
     }
 
+    /**
+     * Get all users (paginated)
+     */
+    public function getUsers(Request $request)
+    {
+        try {
+            $perPage = $request->input('per_page', 10);
+            $users = User::paginate($perPage);
+
+            return response()->json([
+                'status' => 'success',
+                'users' => $users->items(),
+                'pagination' => [
+                    'total' => $users->total(),
+                    'per_page' => $users->perPage(),
+                    'current_page' => $users->currentPage(),
+                    'last_page' => $users->lastPage(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch users: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch users'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get single user by ID
+     */
     public function getUser($userId)
     {
         try {
-            Log::info('Fetching user with ID: ' . $userId);
-            $user = User::find($userId);
+            $user = User::findOrFail($userId);
 
-            if ($user) {
-                Log::info('User found: ' . $user->username);
-                return response()->json($user);
-            } else {
-                Log::warning('User not found for ID: ' . $userId);
-                return response()->json(['message' => 'User not found'], 404);
-            }
+            return response()->json([
+                'status' => 'success',
+                'user' => $user
+            ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching user: ' . $e->getMessage());
-            return response()->json(['message' => 'Error fetching user: ' . $e->getMessage()], 500);
+            Log::error('User not found: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], 404);
+        }
+    }
+
+    /**
+     * Search users
+     */
+    public function searchUsers(Request $request)
+    {
+        try {
+            $query = $request->input('query');
+
+            $users = User::where('username', 'like', "%$query%")
+                ->orWhere('email', 'like', "%$query%")
+                ->orWhere('phone_number', 'like', "%$query%")
+                ->orWhere('citizenship_id_number', 'like', "%$query%")
+                ->limit(10)
+                ->get();
+
+            return response()->json([
+                'status' => 'success',
+                'users' => $users
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Search failed: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Search failed'
+            ], 500);
         }
     }
 }
