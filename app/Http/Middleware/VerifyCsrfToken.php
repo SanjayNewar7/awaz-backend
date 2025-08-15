@@ -7,6 +7,6 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
 class VerifyCsrfToken extends Middleware
 {
     protected $except = [
-        'api/*', // Exclude all API routes from CSRF
+        'api/users/*', // Exclude all API routes from CSRF
     ];
 }

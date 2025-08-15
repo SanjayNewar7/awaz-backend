@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use HasApiTokens, Notifiable;
 
     protected $primaryKey = 'user_id';
     public $incrementing = true;
@@ -15,9 +16,9 @@ class User extends Authenticatable
 
     protected $fillable = [
         'username', 'first_name', 'last_name', 'district', 'city',
-        'ward', 'area_name', 'phone_number', 'gender', 'email', 'password_hash',
+        'ward', 'area_name', 'phone_number', 'gender', 'email', 'bio','password_hash',
         'citizenship_front_image', 'citizenship_back_image', 'citizenship_id_number',
-        'is_verified', 'agreed_to_terms'
+        'is_verified', 'agreed_to_terms',
     ];
 
     protected $hidden = [
@@ -30,6 +31,7 @@ class User extends Authenticatable
         'likes_count' => 'integer',
         'posts_count' => 'integer',
         'ward' => 'integer',
+        'bio'=> 'string',
     ];
 
     public function getAuthPassword()

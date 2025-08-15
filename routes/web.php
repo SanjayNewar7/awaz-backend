@@ -7,7 +7,7 @@ Route::get('/', [AuthController::class, 'showLoginForm'])->name('superadmin.logi
 Route::post('/login', [AuthController::class, 'login'])->name('superadmin.login');
 Route::get('/superadmin', [AuthController::class, 'dashboard'])->name('superadmin.dashboard');
 Route::post('/superadmin/logout', [AuthController::class, 'logout'])->name('superadmin.logout');
-Route::post('/api/users', [AuthController::class, 'store']); // Add this line for signup
-Route::get('/api/users', [AuthController::class, 'getUsers']);
-Route::get('/api/users/search', [AuthController::class, 'searchUsers']);
-Route::get('/api/users/{userId}', [AuthController::class, 'getUser']);
+Route::post('/users', [AuthController::class, 'store']); // Add this line for signup
+Route::get('/users', [AuthController::class, 'getUsers']);
+Route::get('/users/search', [AuthController::class, 'searchUsers']);
+Route::get('/users/{userId}', [AuthController::class, 'getUser']);

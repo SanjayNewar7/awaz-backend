@@ -204,4 +204,38 @@ class AuthController extends Controller
             ], 500);
         }
     }
+    public function userLogin(Request $request)
+{
+    try {
+        $credentials = $request->validate([
+            'username' => 'required_without:email|string|max:50',
+            'email' => 'required_without:username|email|max:100',
+            'password' => 'required|string|min:8',
+        ]);
+
+        $field = filter_var($credentials['username'] ?? $credentials['email'], FILTER_VALIDATE_EMAIL)
+            ? 'email'
+            : 'username';
+
+        $user = User::where($field, $credentials[$field])->first();
+
+        if (!$user || !Hash::check($credentials['password'], $user->password_hash)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        // Generate proper Sanctum token
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful',
+            'access_token' => $token, // This is the Sanctum token
+            'token_type' => 'bearer',
+            'user' => $user
+        ]);
+    } catch (\Exception $e) {
+        Log::error('User login error: ' . $e->getMessage());
+        return response()->json(['message' => 'Login failed'], 500);
+    }
 }
+}
+
