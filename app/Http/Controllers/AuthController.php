@@ -64,6 +64,13 @@ class AuthController extends Controller
                 'citizenship_back_image' => 'required|string' // Base64
             ]);
 
+            // Set default profile image based on gender
+            $profileImagePath = $validated['gender'] === 'Male' ? 'images/male_avatar.jpeg' : 'images/female_avatar.jpeg';
+
+            // Process citizenship images
+            $citizenshipFrontImagePath = $this->saveBase64Image($validated['citizenship_front_image'], 'users/citizenship_front_');
+            $citizenshipBackImagePath = $this->saveBase64Image($validated['citizenship_back_image'], 'users/citizenship_back_');
+
             $user = User::create([
                 'username' => $validated['username'],
                 'first_name' => $validated['first_name'],
@@ -79,8 +86,9 @@ class AuthController extends Controller
                 'gender' => $validated['gender'],
                 'is_verified' => $validated['is_verified'],
                 'agreed_to_terms' => $validated['agreed_to_terms'],
-                'citizenship_front_image' => $validated['citizenship_front_image'],
-                'citizenship_back_image' => $validated['citizenship_back_image']
+                'citizenship_front_image' => $citizenshipFrontImagePath,
+                'citizenship_back_image' => $citizenshipBackImagePath,
+                'profile_image' => $profileImagePath, // Add default profile image
             ]);
 
             return response()->json(['message' => 'User registered successfully', 'user' => $user], 201);
@@ -125,6 +133,103 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             Log::error('Image processing error: ' . $e->getMessage());
             throw $e;
+        }
+    }
+
+    /**
+     * Update user profile
+     */
+    public function updateProfile(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+
+            $validated = $request->validate([
+                'username' => 'sometimes|string|max:50|unique:users,username,' . $user->id,
+                'first_name' => 'sometimes|string|max:50',
+                'last_name' => 'sometimes|string|max:50',
+                'email' => 'sometimes|email|max:100|unique:users,email,' . $user->id,
+                'phone_number' => 'sometimes|string|size:10',
+                'district' => 'sometimes|string|max:50',
+                'city' => 'sometimes|string|max:50',
+                'ward' => 'sometimes|integer',
+                'area_name' => 'sometimes|string|max:100',
+                'citizenship_id_number' => 'sometimes|string|max:50|unique:users,citizenship_id_number,' . $user->id,
+                'gender' => 'sometimes|in:Male,Female,Other',
+                'is_verified' => 'sometimes|boolean',
+                'agreed_to_terms' => 'sometimes|boolean',
+                'citizenship_front_image' => 'sometimes|string', // Base64
+                'citizenship_back_image' => 'sometimes|string', // Base64
+                'profile_image' => 'sometimes|string', // Base64
+            ]);
+
+            // Handle profile image
+            $profileImagePath = $user->profile_image;
+            if (isset($validated['profile_image'])) {
+                // Delete old profile image if it's not a default avatar
+                if ($user->profile_image && !in_array($user->profile_image, ['images/male_avatar.jpeg', 'images/female_avatar.jpeg'])) {
+                    Storage::delete('public/' . $user->profile_image);
+                }
+                $profileImagePath = $this->saveBase64Image($validated['profile_image'], 'users/profile_');
+            } elseif (isset($validated['gender']) && $validated['gender'] !== $user->gender) {
+                // Update default avatar if gender changes
+                $profileImagePath = $validated['gender'] === 'Male' ? 'images/male_avatar.jpeg' : 'images/female_avatar.jpeg';
+            }
+
+            // Handle citizenship images
+            $citizenshipFrontImagePath = $user->citizenship_front_image;
+            if (isset($validated['citizenship_front_image'])) {
+                if ($user->citizenship_front_image) {
+                    Storage::delete('public/' . $user->citizenship_front_image);
+                }
+                $citizenshipFrontImagePath = $this->saveBase64Image($validated['citizenship_front_image'], 'users/citizenship_front_');
+            }
+
+            $citizenshipBackImagePath = $user->citizenship_back_image;
+            if (isset($validated['citizenship_back_image'])) {
+                if ($user->citizenship_back_image) {
+                    Storage::delete('public/' . $user->citizenship_back_image);
+                }
+                $citizenshipBackImagePath = $this->saveBase64Image($validated['citizenship_back_image'], 'users/citizenship_back_');
+            }
+
+            $user->update([
+                'username' => $validated['username'] ?? $user->username,
+                'first_name' => $validated['first_name'] ?? $user->first_name,
+                'last_name' => $validated['last_name'] ?? $user->last_name,
+                'email' => $validated['email'] ?? $user->email,
+                'phone_number' => $validated['phone_number'] ?? $user->phone_number,
+                'district' => $validated['district'] ?? $user->district,
+                'city' => $validated['city'] ?? $user->city,
+                'ward' => $validated['ward'] ?? $user->ward,
+                'area_name' => $validated['area_name'] ?? $user->area_name,
+                'citizenship_id_number' => $validated['citizenship_id_number'] ?? $user->citizenship_id_number,
+                'gender' => $validated['gender'] ?? $user->gender,
+                'is_verified' => $validated['is_verified'] ?? $user->is_verified,
+                'agreed_to_terms' => $validated['agreed_to_terms'] ?? $user->agreed_to_terms,
+                'citizenship_front_image' => $citizenshipFrontImagePath,
+                'citizenship_back_image' => $citizenshipBackImagePath,
+                'profile_image' => $profileImagePath,
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Profile updated successfully',
+                'user' => $user
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Profile update error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Profile update failed',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -204,38 +309,41 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * User login with Sanctum token
+     */
     public function userLogin(Request $request)
-{
-    try {
-        $credentials = $request->validate([
-            'username' => 'required_without:email|string|max:50',
-            'email' => 'required_without:username|email|max:100',
-            'password' => 'required|string|min:8',
-        ]);
+    {
+        try {
+            $credentials = $request->validate([
+                'username' => 'required_without:email|string|max:50',
+                'email' => 'required_without:username|email|max:100',
+                'password' => 'required|string|min:8',
+            ]);
 
-        $field = filter_var($credentials['username'] ?? $credentials['email'], FILTER_VALIDATE_EMAIL)
-            ? 'email'
-            : 'username';
+            $field = filter_var($credentials['username'] ?? $credentials['email'], FILTER_VALIDATE_EMAIL)
+                ? 'email'
+                : 'username';
 
-        $user = User::where($field, $credentials[$field])->first();
+            $user = User::where($field, $credentials[$field])->first();
 
-        if (!$user || !Hash::check($credentials['password'], $user->password_hash)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+            if (!$user || !Hash::check($credentials['password'], $user->password_hash)) {
+                return response()->json(['message' => 'Invalid credentials'], 401);
+            }
+
+            // Generate proper Sanctum token
+            $token = $user->createToken('auth-token')->plainTextToken;
+
+            return response()->json([
+                'message' => 'Login successful',
+                'access_token' => $token,
+                'token_type' => 'bearer',
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            Log::error('User login error: ' . $e->getMessage());
+            return response()->json(['message' => 'Login failed'], 500);
         }
-
-        // Generate proper Sanctum token
-        $token = $user->createToken('auth-token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Login successful',
-            'access_token' => $token, // This is the Sanctum token
-            'token_type' => 'bearer',
-            'user' => $user
-        ]);
-    } catch (\Exception $e) {
-        Log::error('User login error: ' . $e->getMessage());
-        return response()->json(['message' => 'Login failed'], 500);
     }
 }
-}
-
