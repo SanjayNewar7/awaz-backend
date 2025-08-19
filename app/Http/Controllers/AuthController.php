@@ -346,4 +346,29 @@ class AuthController extends Controller
             return response()->json(['message' => 'Login failed'], 500);
         }
     }
+    public function getCurrentUser(Request $request)
+{
+    try {
+        $user = $request->user();
+
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'user_id' => $user->user_id,
+                'username' => $user->username,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'citizenship_front_image' => $user->citizenship_front_image,
+                'citizenship_back_image' => $user->citizenship_back_image,
+                'is_verified' => (bool)$user->is_verified,
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to fetch user data'
+        ], 500);
+    }
 }
+}
+

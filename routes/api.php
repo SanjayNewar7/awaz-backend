@@ -21,10 +21,13 @@ Route::post('/user-login', [AuthController::class, 'userLogin']);
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [AuthController::class, 'getUsers']);
-    Route::get('/users/{userId}', [AuthController::class, 'getUser']); // Handles /api/users/9
-    Route::post('/issues', [IssueController::class, 'store']);
-    Route::get('/users/me', [ProfileController::class, 'getCurrentUser']);
-    Route::put('/users/me', [ProfileController::class, 'updateProfile']);
-     Route::get('/users/me', [AuthController::class, 'getCurrentUser']); // Changed to AuthController
+
+    // Specific 'me' routes must come BEFORE the dynamic {userId} route
+    Route::get('/users/me', [AuthController::class, 'getCurrentUser']);
     Route::put('/users/me', [AuthController::class, 'updateProfile']);
+
+    // Dynamic {userId} route now after 'me'
+    Route::get('/users/{userId}', [AuthController::class, 'getUser']);
+
+    Route::post('/issues', [IssueController::class, 'store']);
 });
