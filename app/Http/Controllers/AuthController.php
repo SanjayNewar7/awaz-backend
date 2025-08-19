@@ -64,8 +64,8 @@ class AuthController extends Controller
                 'citizenship_back_image' => 'required|string' // Base64
             ]);
 
-            // Set default profile image based on gender
-            $profileImagePath = $validated['gender'] === 'Male' ? 'images/male_avatar.jpeg' : 'images/female_avatar.jpeg';
+            // Set default profile image based on gender with correct extension
+            $profileImagePath = $validated['gender'] === 'Male' ? 'images/male_avatar.png' : 'images/female_avatar.png';
 
             // Process citizenship images
             $citizenshipFrontImagePath = $this->saveBase64Image($validated['citizenship_front_image'], 'users/citizenship_front_');
@@ -88,7 +88,7 @@ class AuthController extends Controller
                 'agreed_to_terms' => $validated['agreed_to_terms'],
                 'citizenship_front_image' => $citizenshipFrontImagePath,
                 'citizenship_back_image' => $citizenshipBackImagePath,
-                'profile_image' => $profileImagePath, // Add default profile image
+                'profile_image' => $profileImagePath,
             ]);
 
             return response()->json(['message' => 'User registered successfully', 'user' => $user], 201);
@@ -99,7 +99,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Save base64 image to storage
+     * Save base64 image to storage with dynamic extension
      */
     private function saveBase64Image($base64Image, $pathPrefix)
     {
@@ -110,7 +110,10 @@ class AuthController extends Controller
 
             if (strpos($base64Image, ';base64,') !== false) {
                 list(, $base64Image) = explode(';', $base64Image);
+                $extension = strpos($base64Image, 'image/png') !== false ? 'png' : 'jpg';
                 list(, $base64Image) = explode(',', $base64Image);
+            } else {
+                $extension = 'jpg'; // Default to jpg if no MIME type
             }
 
             $imageData = base64_decode($base64Image);
@@ -122,7 +125,7 @@ class AuthController extends Controller
                 throw new \Exception('Invalid image format');
             }
 
-            $filename = $pathPrefix . uniqid() . '.jpg';
+            $filename = $pathPrefix . uniqid() . '.' . $extension;
             $storagePath = 'public/images/' . $filename;
 
             if (!Storage::put($storagePath, $imageData)) {
@@ -151,35 +154,35 @@ class AuthController extends Controller
             }
 
             $validated = $request->validate([
-                'username' => 'sometimes|string|max:50|unique:users,username,' . $user->id,
+                'username' => 'sometimes|string|max:50|unique:users,username,' . $user->user_id,
                 'first_name' => 'sometimes|string|max:50',
                 'last_name' => 'sometimes|string|max:50',
-                'email' => 'sometimes|email|max:100|unique:users,email,' . $user->id,
+                'email' => 'sometimes|email|max:100|unique:users,email,' . $user->user_id,
                 'phone_number' => 'sometimes|string|size:10',
                 'district' => 'sometimes|string|max:50',
                 'city' => 'sometimes|string|max:50',
                 'ward' => 'sometimes|integer',
                 'area_name' => 'sometimes|string|max:100',
-                'citizenship_id_number' => 'sometimes|string|max:50|unique:users,citizenship_id_number,' . $user->id,
+                'citizenship_id_number' => 'sometimes|string|max:50|unique:users,citizenship_id_number,' . $user->user_id,
                 'gender' => 'sometimes|in:Male,Female,Other',
                 'is_verified' => 'sometimes|boolean',
                 'agreed_to_terms' => 'sometimes|boolean',
-                'citizenship_front_image' => 'sometimes|string', // Base64
-                'citizenship_back_image' => 'sometimes|string', // Base64
-                'profile_image' => 'sometimes|string', // Base64
+                'citizenship_front_image' => 'sometimes|string',
+                'citizenship_back_image' => 'sometimes|string',
+                'profile_image' => 'sometimes|string',
             ]);
 
             // Handle profile image
             $profileImagePath = $user->profile_image;
             if (isset($validated['profile_image'])) {
                 // Delete old profile image if it's not a default avatar
-                if ($user->profile_image && !in_array($user->profile_image, ['images/male_avatar.jpeg', 'images/female_avatar.jpeg'])) {
+                if ($user->profile_image && !in_array($user->profile_image, ['images/male_avatar.png', 'images/female_avatar.png'])) {
                     Storage::delete('public/' . $user->profile_image);
                 }
                 $profileImagePath = $this->saveBase64Image($validated['profile_image'], 'users/profile_');
             } elseif (isset($validated['gender']) && $validated['gender'] !== $user->gender) {
                 // Update default avatar if gender changes
-                $profileImagePath = $validated['gender'] === 'Male' ? 'images/male_avatar.jpeg' : 'images/female_avatar.jpeg';
+                $profileImagePath = $validated['gender'] === 'Male' ? 'images/male_avatar.png' : 'images/female_avatar.png';
             }
 
             // Handle citizenship images
@@ -346,29 +349,41 @@ class AuthController extends Controller
             return response()->json(['message' => 'Login failed'], 500);
         }
     }
-    public function getCurrentUser(Request $request)
-{
-    try {
-        $user = $request->user();
 
-        return response()->json([
-            'status' => 'success',
-            'user' => [
-                'user_id' => $user->user_id,
-                'username' => $user->username,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'citizenship_front_image' => $user->citizenship_front_image,
-                'citizenship_back_image' => $user->citizenship_back_image,
-                'is_verified' => (bool)$user->is_verified,
-            ]
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to fetch user data'
-        ], 500);
+    public function getCurrentUser(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            return response()->json([
+                'status' => 'success',
+                'user' => [
+                    'user_id' => $user->user_id,
+                    'username' => $user->username,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'district' => $user->district,
+                    'city' => $user->city,
+                    'ward' => $user->ward,
+                    'area_name' => $user->area_name,
+                    'phone_number' => $user->phone_number,
+                    'gender' => $user->gender,
+                    'email' => $user->email,
+                    'bio' => $user->bio,
+                    'profile_image' => $user->profile_image,  // Returns /storage/images/...
+                    'citizenship_front_image' => $user->citizenship_front_image,
+                    'citizenship_back_image' => $user->citizenship_back_image,
+                    'citizenship_id_number' => $user->citizenship_id_number,
+                    'is_verified' => (bool)$user->is_verified,
+                    'likes_count' => $user->likes_count ?? 0,
+                    'posts_count' => $user->posts_count ?? 0,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch user data'
+            ], 500);
+        }
     }
 }
-}
-

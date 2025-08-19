@@ -12,12 +12,17 @@ Route::get('/users', [AuthController::class, 'getUsers']);
 Route::get('/users/search', [AuthController::class, 'searchUsers']);
 Route::get('/users/{userId}', [AuthController::class, 'getUser']);
 
-
-
-Route::get('/storage/{path}', function ($path) {
-    $fullPath = storage_path('app/public/' . $path);
-    if (file_exists($fullPath)) {
-        return response()->file($fullPath);
-    }
-    return response()->json(['message' => 'File not found'], 404);
-})->where('path', '.*');
+Route::group([], function () {
+    Route::get('/storage/{path}', function ($path) {
+        $fullPath = storage_path('app/public/' . $path);
+        \Illuminate\Support\Facades\Log::info('Attempting to serve file: ' . $fullPath);
+        if (file_exists($fullPath)) {
+            \Illuminate\Support\Facades\Log::info('File found, serving: ' . $fullPath);
+            $mimeType = mime_content_type($fullPath);
+            return response()->file($fullPath, ['Content-Type' => $mimeType]);
+        }
+        \Illuminate\Support\Facades\Log::warning('File not found: ' . $fullPath);
+        return response()->json(['message' => 'File not found'], 404);
+    })->where('path', '.*');
+});
+?>
