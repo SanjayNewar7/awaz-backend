@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\IssueController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PostController;
 
 Route::prefix('users')->middleware('api')->group(function () {
     Route::get('/', [UserController::class, 'index']);
@@ -30,4 +31,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/{userId}', [AuthController::class, 'getUser']);
 
     Route::post('/issues', [IssueController::class, 'store']);
+
+    // Add these new routes for issues
+    Route::get('/issues', [IssueController::class, 'index']);
+    Route::post('/issues/{id}/react', [IssueController::class, 'addReaction']);
+    Route::post('/issues/{id}/comment', [IssueController::class, 'addComment']);
+    Route::get('/issues/{id}/comments', [IssueController::class, 'getComments']);
+
+    // Add route to get posts
+    Route::get('/posts', [PostController::class, 'index']);
 });

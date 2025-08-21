@@ -267,23 +267,37 @@ class AuthController extends Controller
     /**
      * Get single user by ID
      */
-    public function getUser($userId)
-    {
-        try {
-            $user = User::findOrFail($userId);
+   public function getUser($userId)
+{
+    try {
+        $user = User::findOrFail($userId);
 
-            return response()->json([
-                'status' => 'success',
-                'user' => $user
-            ]);
-        } catch (\Exception $e) {
-            Log::error('User not found: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'User not found'
-            ], 404);
-        }
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'user_id' => $user->user_id,
+                'username' => $user->username,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'district' => $user->district,
+                'city' => $user->city,
+                'ward' => $user->ward,
+                'area_name' => $user->area_name,
+                'phone_number' => $user->phone_number,
+                'email' => $user->email,
+                'bio' => $user->bio ?? 'Hello, Namaste everyone',
+                'profile_image' => $user->profile_image ? str_replace('public/', '', $user->profile_image) : null,
+                'posts_count' => $user->posts()->count(), // Assuming a relationship
+                'likes_count' => 0 // Implement logic to count likes if needed
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'User not found'
+        ], 404);
     }
+}
 
     /**
      * Search users

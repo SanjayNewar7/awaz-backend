@@ -33,7 +33,10 @@ class ProfileController extends Controller
                     'area_name' => $user->area_name,
                     'phone_number' => $user->phone_number,
                     'email' => $user->email,
-                    'bio' => $user->bio ?? 'Hello, Namaste everyone'
+                    'bio' => $user->bio ?? 'Hello, Namaste everyone',
+                    'profile_image' => $user->profile_image ? str_replace('public/', '', $user->profile_image) : null,
+                    'posts_count' => $user->posts()->count(), // Assuming a posts relationship
+                    'likes_count' => 0 // Placeholder; implement logic if needed
                 ]
             ]);
         } catch (\Exception $e) {
@@ -41,6 +44,38 @@ class ProfileController extends Controller
                 'status' => 'error',
                 'message' => 'Failed to fetch user data'
             ], 500);
+        }
+    }
+
+    public function getUser($userId)
+    {
+        try {
+            $user = User::findOrFail($userId);
+
+            return response()->json([
+                'status' => 'success',
+                'user' => [
+                    'user_id' => $user->user_id,
+                    'username' => $user->username,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'district' => $user->district,
+                    'city' => $user->city,
+                    'ward' => $user->ward,
+                    'area_name' => $user->area_name,
+                    'phone_number' => $user->phone_number,
+                    'email' => $user->email,
+                    'bio' => $user->bio ?? 'No bio available',
+                    'profile_image' => $user->profile_image ? str_replace('public/', '', $user->profile_image) : null,
+                    'posts_count' => $user->posts()->count(), // Assuming a posts relationship
+                    'likes_count' => 0 // Placeholder; implement logic if needed
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], 404);
         }
     }
 
