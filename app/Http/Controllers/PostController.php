@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Post;
@@ -8,9 +7,6 @@ use Illuminate\Support\Facades\Log;
 
 class PostController extends Controller
 {
-    /**
-     * Get all posts
-     */
     public function index()
     {
         $posts = Post::with('user:user_id,username,profile_image')
@@ -18,15 +14,15 @@ class PostController extends Controller
             ->get();
         Log::info('Fetched posts: ', ['count' => $posts->count(), 'posts' => $posts->toArray()]);
         $posts = $posts->map(function ($post) {
-            // Access the raw profile_image value and remove 'public/' prefix
             $profileImage = $post->user->profile_image;
             $profileImage = $profileImage ? str_replace('public/', '', $profileImage) : null;
 
             return [
                 'post_id' => $post->post_id,
+                'issue_id' => $post->issue_id, // Add this
                 'user_id' => $post->user_id,
                 'username' => $post->user->username,
-                'profile_image' => $profileImage, // Relative path, e.g., 'storage/images/male_avatar.png'
+                'profile_image' => $profileImage,
                 'title' => $post->title,
                 'description' => $post->description,
                 'category' => $post->category,
