@@ -13,7 +13,6 @@ class User extends Authenticatable
     use HasFactory, HasApiTokens, Notifiable;
 
     protected $primaryKey = 'user_id';
-
     protected $fillable = [
         'username',
         'first_name',
@@ -29,6 +28,7 @@ class User extends Authenticatable
         'gender',
         'is_verified',
         'agreed_to_terms',
+        'likes_count',
         'citizenship_front_image',
         'citizenship_back_image',
         'profile_image',
@@ -39,31 +39,16 @@ class User extends Authenticatable
         'agreed_to_terms' => 'boolean',
     ];
 
-    /**
-     * Get the name of the unique identifier for the user.
-     *
-     * @return string
-     */
     public function getAuthIdentifierName()
     {
         return 'user_id';
     }
 
-    /**
-     * Get the unique identifier for the user.
-     *
-     * @return mixed
-     */
     public function getAuthIdentifier()
     {
         return $this->user_id;
     }
 
-    /**
-     * Get the password for the user.
-     *
-     * @return string
-     */
     public function getAuthPassword()
     {
         return $this->password_hash;
@@ -83,8 +68,14 @@ class User extends Authenticatable
     {
         return $value ? Storage::url($value) : null;
     }
+
     public function posts()
-{
-    return $this->hasMany(Post::class, 'user_id', 'user_id');
+    {
+        return $this->hasMany(Post::class, 'user_id', 'user_id');
+    }
+    public function likes()
+    {
+        return $this->belongsToMany(User::class, 'likes', 'user_id', 'liked_user_id')->withTimestamps();
+    }
 }
-}
+

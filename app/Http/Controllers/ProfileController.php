@@ -20,6 +20,9 @@ class ProfileController extends Controller
                 ], 401);
             }
 
+            // Determine if the authenticated user has liked their own profile (usually false)
+            $isLiked = false;
+
             return response()->json([
                 'status' => 'success',
                 'user' => [
@@ -35,8 +38,9 @@ class ProfileController extends Controller
                     'email' => $user->email,
                     'bio' => $user->bio ?? 'Hello, Namaste everyone',
                     'profile_image' => $user->profile_image ? str_replace('public/', '', $user->profile_image) : null,
-                    'posts_count' => $user->posts()->count(), // Assuming a posts relationship
-                    'likes_count' => 0 // Placeholder; implement logic if needed
+                    'posts_count' => $user->posts()->count(),
+                    'likes_count' => $user->likes_count,
+                    'is_liked' => $isLiked,
                 ]
             ]);
         } catch (\Exception $e) {
@@ -48,36 +52,42 @@ class ProfileController extends Controller
     }
 
     public function getUser($userId)
-    {
-        try {
-            $user = User::findOrFail($userId);
+{
+    try {
+        $user = User::findOrFail($userId);
+        $authUser = Auth::user();
+        $isLiked = $authUser ? $authUser->likes()->where('liked_user_id', $userId)->exists() : false;
 
-            return response()->json([
-                'status' => 'success',
-                'user' => [
-                    'user_id' => $user->user_id,
-                    'username' => $user->username,
-                    'first_name' => $user->first_name,
-                    'last_name' => $user->last_name,
-                    'district' => $user->district,
-                    'city' => $user->city,
-                    'ward' => $user->ward,
-                    'area_name' => $user->area_name,
-                    'phone_number' => $user->phone_number,
-                    'email' => $user->email,
-                    'bio' => $user->bio ?? 'No bio available',
-                    'profile_image' => $user->profile_image ? str_replace('public/', '', $user->profile_image) : null,
-                    'posts_count' => $user->posts()->count(), // Assuming a posts relationship
-                    'likes_count' => 0 // Placeholder; implement logic if needed
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'User not found'
-            ], 404);
-        }
+        // Calculate likes_count dynamically
+        $likesCount = $user->likes()->count();
+
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'user_id' => $user->user_id,
+                'username' => $user->username,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'district' => $user->district,
+                'city' => $user->city,
+                'ward' => $user->ward,
+                'area_name' => $user->area_name,
+                'phone_number' => $user->phone_number,
+                'email' => $user->email,
+                'bio' => $user->bio ?? 'No bio available',
+                'profile_image' => $user->profile_image ? str_replace('public/', '', $user->profile_image) : null,
+                'posts_count' => $user->posts()->count(),
+                'likes_count' => $likesCount, // Use dynamic count
+                'is_liked' => $isLiked
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'User not found'
+        ], 404);
     }
+}
 
     public function updateProfile(Request $request)
     {
@@ -115,4 +125,60 @@ class ProfileController extends Controller
             ], 500);
         }
     }
+
+    public function toggleLike(Request $request, $userId)
+{
+    try {
+        $authUser = Auth::user();
+        if (!$authUser) {
+            \Log::error("ToggleLike: User not authenticated", ['userId' => $userId]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not authenticated'
+            ], 401);
+        }
+
+        if ($authUser->user_id == $userId) {
+            \Log::error("ToggleLike: User tried to like own profile", ['userId' => $userId]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Cannot like your own profile'
+            ], 403);
+        }
+
+        $targetUser = User::findOrFail($userId);
+        $likeExists = $authUser->likes()->where('liked_user_id', $userId)->exists();
+
+        if ($likeExists) {
+            $targetUser->decrement('likes_count');
+            $authUser->likes()->detach($userId);
+            $message = 'You removed heart';
+            $isLiked = false;
+        } else {
+            $targetUser->increment('likes_count');
+            $authUser->likes()->attach($userId);
+            $message = 'You gave a heart';
+            $isLiked = true;
+        }
+
+        $response = [
+            'status' => 'success',
+            'message' => $message,
+            'likes_count' => $targetUser->likes_count,
+            'is_liked' => $isLiked
+        ];
+        \Log::info("ToggleLike: Success", ['userId' => $userId, 'response' => $response]);
+        return response()->json($response);
+    } catch (\Exception $e) {
+        \Log::error("ToggleLike: Exception occurred", [
+            'userId' => $userId,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to toggle like: ' . $e->getMessage()
+        ], 500);
+    }
+}
 }

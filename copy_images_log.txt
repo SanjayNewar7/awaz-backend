@@ -1,0 +1,91 @@
+[Sun 08/24/2025 15:15:53.43] Starting image copy process... 
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : Sunday, August 24, 2025 3:15:53 PM
+   Source : C:\Users\ACER\awaz\public\storage\public\images\comments\
+     Dest : C:\Users\ACER\awaz\public\storage\images\comments\
+
+    Files : *.*
+	    
+  Options : *.* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /NP /MON:1 /MOT:1 /R:1000000 /W:30 
+
+------------------------------------------------------------------------------
+
+	                   2	C:\Users\ACER\awaz\public\storage\public\images\comments\
+	    New File  		  112356	68aada9a3037c.jpg
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         1         0         1         0         0         0
+   Files :         2         1         1         0         0         0
+   Bytes :    1.13 m   109.7 k    1.02 m         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+   Ended : Sunday, August 24, 2025 3:15:53 PM
+
+
+  Monitor : Waiting for 1 minutes and 1 changes...
+
+
+------------------------------------------------------------------------------
+
+  Started : Sunday, August 24, 2025 3:16:53 PM
+   Source : C:\Users\ACER\awaz\public\storage\public\images\comments\
+     Dest : C:\Users\ACER\awaz\public\storage\images\comments\
+
+    Files : *.*
+	    
+  Options : *.* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /NP /MON:1 /MOT:1 /R:1000000 /W:30 
+
+------------------------------------------------------------------------------
+
+	                   3	C:\Users\ACER\awaz\public\storage\public\images\comments\
+	    New File  		  134795	68aadbf6a629d.jpg
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         1         0         1         0         0         0
+   Files :         3         1         2         0         0         0
+   Bytes :    1.26 m   131.6 k    1.13 m         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+   Speed :           26,959,000 Bytes/sec.
+   Speed :            1,542.606 MegaBytes/min.
+   Ended : Sunday, August 24, 2025 3:16:53 PM
+
+
+  Monitor : Waiting for 1 minutes and 1 changes...
+
+
+------------------------------------------------------------------------------
+
+  Started : Sunday, August 24, 2025 3:17:53 PM
+   Source : C:\Users\ACER\awaz\public\storage\public\images\comments\
+     Dest : C:\Users\ACER\awaz\public\storage\images\comments\
+
+    Files : *.*
+	    
+  Options : *.* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /NP /MON:1 /MOT:1 /R:1000000 /W:30 
+
+------------------------------------------------------------------------------
+
+	                   4	C:\Users\ACER\awaz\public\storage\public\images\comments\
+	    New File  		   1.0 m	68aadc282595e.jpg
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         1         0         1         0         0         0
+   Files :         4         1         3         0         0         0
+   Bytes :    2.27 m    1.01 m    1.26 m         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+   Ended : Sunday, August 24, 2025 3:17:53 PM
+
+
+  Monitor : Waiting for 1 minutes and 1 changes...
+[Sun 08/24/2025 15:15:53.43] Error copying files from C:\Users\ACER\awaz\public\storage\public\images\comments to C:\Users\ACER\awaz\public\storage\images\comments, ErrorLevel: -1073741510 

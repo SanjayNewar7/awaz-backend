@@ -22,6 +22,7 @@ Route::post('/user-login', [AuthController::class, 'userLogin']);
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [AuthController::class, 'getUsers']);
+    Route::post('/users/{userId}/like', [ProfileController::class, 'toggleLike']);
 
     // Specific 'me' routes must come BEFORE the dynamic {userId} route
     Route::get('/users/me', [AuthController::class, 'getCurrentUser']);
@@ -29,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dynamic {userId} route now after 'me'
     Route::get('/users/{userId}', [AuthController::class, 'getUser']);
+
 
     Route::post('/issues', [IssueController::class, 'store']);
 

@@ -12,9 +12,6 @@ use Illuminate\Support\Facades\DB;
 
 class IssueController extends Controller
 {
-    /**
-     * Save base64 image to storage
-     */
     private function saveBase64Image($base64Image, $pathPrefix)
     {
         try {
@@ -23,8 +20,11 @@ class IssueController extends Controller
             }
 
             if (strpos($base64Image, ';base64,') !== false) {
-                list(, $base64Image) = explode(';', $base64Image);
+                list($meta, $base64Image) = explode(';', $base64Image);
+                $extension = strpos($meta, 'image/png') !== false ? 'png' : 'jpg';
                 list(, $base64Image) = explode(',', $base64Image);
+            } else {
+                $extension = 'jpg'; // Default to jpg
             }
 
             $imageData = base64_decode($base64Image);
@@ -36,14 +36,14 @@ class IssueController extends Controller
                 throw new \Exception('Invalid image format');
             }
 
-            $filename = $pathPrefix . uniqid() . '.jpg';
-            $storagePath = 'public/images/' . $filename;
+            $filename = $pathPrefix . uniqid() . '.' . $extension;
+            $storagePath = 'images/' . $filename; // Save to images/{subfolder}/
 
-            if (!Storage::put($storagePath, $imageData)) {
+            if (!Storage::disk('public')->put($storagePath, $imageData)) {
                 throw new \Exception('Failed to save image to storage');
             }
 
-            return 'images/' . $filename;
+            return $storagePath;
         } catch (\Exception $e) {
             Log::error('Image processing error: ' . $e->getMessage());
             throw $e;
@@ -91,7 +91,6 @@ class IssueController extends Controller
                 $photo2Path = $this->saveBase64Image($request->photo2, 'issues/photo2_');
             }
 
-            // Use DB transaction to ensure both issue and post are created together
             DB::beginTransaction();
 
             try {
@@ -137,12 +136,10 @@ class IssueController extends Controller
                     'issue' => $issue,
                     'post' => $post
                 ], 201);
-
             } catch (\Exception $e) {
                 DB::rollBack();
                 throw $e;
             }
-
         } catch (\Exception $e) {
             Log::error('Issue creation error: ' . $e->getMessage());
             return response()->json([
@@ -173,9 +170,6 @@ class IssueController extends Controller
         }
     }
 
-    /**
-     * Update reaction counts in both posts and issues tables
-     */
     private function updateReactionCounts($issueId)
     {
         $reactionCounts = DB::table('issue_reactions')
@@ -193,22 +187,17 @@ class IssueController extends Controller
             'fixed_count' => $reactionCounts['fixed']->count ?? 0,
         ];
 
-        // Update posts table
         $post = Post::where('issue_id', $issueId)->first();
         if ($post) {
             $post->update($reactionData);
         }
 
-        // Update issues table
         $issue = Issue::find($issueId);
         if ($issue) {
             $issue->update($reactionData);
         }
     }
 
-    /**
-     * Add reaction to an issue
-     */
     public function addReaction(Request $request, $id)
     {
         try {
@@ -240,7 +229,6 @@ class IssueController extends Controller
 
             $reactionType = $request->reaction_type;
 
-            // Check if user already has this reaction type
             $existingReaction = DB::table('issue_reactions')
                 ->where('issue_id', $id)
                 ->where('user_id', $userId)
@@ -248,7 +236,6 @@ class IssueController extends Controller
                 ->first();
 
             if ($existingReaction) {
-                // Remove the reaction (toggle off)
                 DB::table('issue_reactions')
                     ->where('issue_id', $id)
                     ->where('user_id', $userId)
@@ -258,7 +245,6 @@ class IssueController extends Controller
                 $action = 'removed';
                 Log::info('Reaction removed for user ' . $userId . ' on issue ' . $id . ' type: ' . $reactionType);
             } else {
-                // Check if user already has 2 reactions
                 $userReactionCount = DB::table('issue_reactions')
                     ->where('issue_id', $id)
                     ->where('user_id', $userId)
@@ -271,7 +257,6 @@ class IssueController extends Controller
                     ], 400);
                 }
 
-                // Add new reaction
                 DB::table('issue_reactions')->insert([
                     'issue_id' => $id,
                     'user_id' => $userId,
@@ -284,10 +269,8 @@ class IssueController extends Controller
                 Log::info('Reaction added for user ' . $userId . ' on issue ' . $id . ' type: ' . $reactionType);
             }
 
-            // Update reaction counts in both tables
             $this->updateReactionCounts($id);
 
-            // Get updated reaction counts
             $reactionCounts = DB::table('issue_reactions')
                 ->where('issue_id', $id)
                 ->select('reaction_type', DB::raw('count(*) as count'))
@@ -295,7 +278,6 @@ class IssueController extends Controller
                 ->get()
                 ->keyBy('reaction_type');
 
-            // Get user's current reactions for this issue
             $userReactions = DB::table('issue_reactions')
                 ->where('issue_id', $id)
                 ->where('user_id', $userId)
@@ -308,7 +290,6 @@ class IssueController extends Controller
                 'reaction_counts' => $reactionCounts,
                 'user_reactions' => $userReactions
             ]);
-
         } catch (\Exception $e) {
             Log::error('Reaction error for issue ' . $id . ': ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
@@ -321,9 +302,6 @@ class IssueController extends Controller
         }
     }
 
-    /**
-     * Get user's reactions for an issue
-     */
     public function getUserReactions($id)
     {
         try {
@@ -346,7 +324,6 @@ class IssueController extends Controller
                 'status' => 'success',
                 'user_reactions' => $userReactions
             ]);
-
         } catch (\Exception $e) {
             Log::error('Failed to get user reactions for issue ' . $id . ': ' . $e->getMessage());
             return response()->json([
@@ -356,9 +333,6 @@ class IssueController extends Controller
         }
     }
 
-    /**
-     * Add comment to an issue
-     */
     public function addComment(Request $request, $id)
     {
         try {
@@ -385,13 +359,11 @@ class IssueController extends Controller
                 ], 401);
             }
 
-            // Save image if provided
             $imagePath = null;
             if ($request->image) {
                 $imagePath = $this->saveBase64Image($request->image, 'comments/');
             }
 
-            // Create comment
             $commentId = DB::table('issue_comments')->insertGetId([
                 'issue_id' => $id,
                 'user_id' => $userId,
@@ -401,13 +373,11 @@ class IssueController extends Controller
                 'updated_at' => now()
             ]);
 
-            // Update comment count in posts table
             $post = Post::where('issue_id', $id)->first();
             if ($post) {
                 $post->increment('comment_count');
             }
 
-            // Get the created comment with user details
             $comment = DB::table('issue_comments')
                 ->join('users', 'issue_comments.user_id', '=', 'users.user_id')
                 ->where('issue_comments.id', $commentId)
@@ -428,9 +398,6 @@ class IssueController extends Controller
         }
     }
 
-    /**
-     * Get comments for an issue
-     */
     public function getComments($id)
     {
         try {
@@ -454,3 +421,4 @@ class IssueController extends Controller
         }
     }
 }
+

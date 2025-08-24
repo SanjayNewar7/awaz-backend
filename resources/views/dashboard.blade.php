@@ -791,581 +791,647 @@
         </div>
     </div>
 
-    <script>
-        // API Configuration
-        const API_URL = '/api/users';
-        const ITEMS_PER_PAGE = 10;
+   <script>
+    // API Configuration
+    const API_URL = '/api/users';
+    const ITEMS_PER_PAGE = 10;
 
-        // DOM Elements
-        const usersListBody = document.getElementById('users-list-body');
-        const searchResultsBody = document.getElementById('search-results-body');
-        const userDetailCard = document.getElementById('user-detail-card');
-        const refreshBtn = document.getElementById('refresh-btn');
-        const searchInput = document.getElementById('search-input');
-        const searchBtn = document.getElementById('search-btn');
-        const pagination = document.getElementById('pagination');
-        const listViewBtn = document.getElementById('list-view-btn');
-        const searchViewBtn = document.getElementById('search-view-btn');
-        const listViewContainer = document.getElementById('list-view-container');
-        const searchViewContainer = document.getElementById('search-view-container');
-        const toggleRegistrationBtn = document.getElementById('toggle-registration');
-        const registrationForm = document.getElementById('user-registration-form');
-        const cancelRegistrationBtn = document.getElementById('cancel-registration');
-        const registerAnotherBtn = document.getElementById('register-another');
-        const registrationSuccess = document.getElementById('registration-success');
-        const frontImageInput = document.getElementById('citizenship_front_image');
-        const backImageInput = document.getElementById('citizenship_back_image');
-        const frontImagePreview = document.getElementById('front-image-preview');
-        const backImagePreview = document.getElementById('back-image-preview');
+    // DOM Elements
+    const usersListBody = document.getElementById('users-list-body');
+    const searchResultsBody = document.getElementById('search-results-body');
+    const userDetailCard = document.getElementById('user-detail-card');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const searchInput = document.getElementById('search-input');
+    const searchBtn = document.getElementById('search-btn');
+    const pagination = document.getElementById('pagination');
+    const listViewBtn = document.getElementById('list-view-btn');
+    const searchViewBtn = document.getElementById('search-view-btn');
+    const listViewContainer = document.getElementById('list-view-container');
+    const searchViewContainer = document.getElementById('search-view-container');
+    const toggleRegistrationBtn = document.getElementById('toggle-registration');
+    const registrationForm = document.getElementById('user-registration-form');
+    const cancelRegistrationBtn = document.getElementById('cancel-registration');
+    const registerAnotherBtn = document.getElementById('register-another');
+    const registrationSuccess = document.getElementById('registration-success');
+    const frontImageInput = document.getElementById('citizenship_front_image');
+    const backImageInput = document.getElementById('citizenship_back_image');
+    const frontImagePreview = document.getElementById('front-image-preview');
+    const backImagePreview = document.getElementById('back-image-preview');
 
-        // Current state
-        let currentPage = 1;
-        let totalPages = 1;
-        let selectedUserId = null;
-        let isSearchView = false;
+    // Current state
+    let currentPage = 1;
+    let totalPages = 1;
+    let selectedUserId = null;
+    let isSearchView = false;
 
-        // Format date for display
-        const formatDate = (dateString) => {
-            const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-            return new Date(dateString).toLocaleDateString(undefined, options);
-        };
+    // Format date for display
+    const formatDate = (dateString) => {
+        const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    };
 
-        // Render user list row
-        const renderUserRow = (user) => {
-            const isSelected = selectedUserId === user.user_id;
-            return `
-                <div class="user-row ${isSelected ? 'selected' : ''}" data-user-id="${user.user_id}">
-                    <div class="user-cell">${user.user_id}</div>
-                    <div class="user-cell">@${user.username}</div>
-                    <div class="user-cell">${user.email || '-'}</div>
-                    <div class="user-cell">${user.citizenship_id_number || '-'}</div>
-                    <div class="user-cell">${user.phone_number || '-'}</div>
+    // Render user list row
+    const renderUserRow = (user) => {
+        const isSelected = selectedUserId === user.user_id;
+        return `
+            <div class="user-row ${isSelected ? 'selected' : ''}" data-user-id="${user.user_id}">
+                <div class="user-cell">${user.user_id}</div>
+                <div class="user-cell">@${user.username}</div>
+                <div class="user-cell">${user.email || '-'}</div>
+                <div class="user-cell">${user.citizenship_id_number || '-'}</div>
+                <div class="user-cell">${user.phone_number || '-'}</div>
+            </div>
+        `;
+    };
+
+    // Render user details
+    const renderUserDetails = (user) => {
+        return `
+            <div class="user-header">
+                <div>
+                    <div class="user-title">${user.first_name} ${user.last_name}</div>
+                    <div class="user-subtitle">User ID: ${user.user_id} | @${user.username}</div>
                 </div>
-            `;
-        };
+                <span class="status-badge ${user.is_verified ? 'verified' : 'unverified'}">
+                    ${user.is_verified ? 'Verified' : 'Unverified'}
+                </span>
+            </div>
 
-        // Render user details
-        const renderUserDetails = (user) => {
-            return `
-                <div class="user-header">
-                    <div>
-                        <div class="user-title">${user.first_name} ${user.last_name}</div>
-                        <div class="user-subtitle">User ID: ${user.user_id} | @${user.username}</div>
-                    </div>
-                    <span class="status-badge ${user.is_verified ? 'verified' : 'unverified'}">
-                        ${user.is_verified ? 'Verified' : 'Unverified'}
-                    </span>
+            <div class="user-details">
+                <div class="detail-group">
+                    <div class="detail-label">Email</div>
+                    <div class="detail-value">${user.email || '<span class="empty">Not provided</span>'}</div>
                 </div>
-
-                <div class="user-details">
-                    <div class="detail-group">
-                        <div class="detail-label">Email</div>
-                        <div class="detail-value">${user.email || '<span class="empty">Not provided</span>'}</div>
-                    </div>
-                    <div class="detail-group">
-                        <div class="detail-label">Phone</div>
-                        <div class="detail-value">${user.phone_number || '<span class="empty">Not provided</span>'}</div>
-                    </div>
-                    <div class="detail-group">
-                        <div class="detail-label">Gender</div>
-                        <div class="detail-value">${user.gender || '<span class="empty">Not provided</span>'}</div>
-                    </div>
-                    <div class="detail-group">
-                        <div class="detail-label">Location</div>
-                        <div class="detail-value">${user.city || '<span class="empty">Not provided</span>'}, ${user.district || '<span class="empty">Not provided</span>'} - Ward ${user.ward || '<span class="empty">Not provided</span>'} (${user.area_name || '<span class="empty">Not provided</span>'})</div>
-                    </div>
-                    <div class="detail-group">
-                        <div class="detail-label">Citizenship ID</div>
-                        <div class="detail-value">${user.citizenship_id_number || '<span class="empty">Not provided</span>'}</div>
-                    </div>
-                    <div class="detail-group">
-                        <div class="detail-label">Account Created</div>
-                        <div class="detail-value">${user.created_at ? formatDate(user.created_at) : '<span class="empty">Not provided</span>'}</div>
-                    </div>
-                    <div class="detail-group">
-                        <div class="detail-label">Last Updated</div>
-                        <div class="detail-value">${user.updated_at ? formatDate(user.updated_at) : '<span class="empty">Not provided</span>'}</div>
-                    </div>
-                    <div class="detail-group">
-                        <div class="detail-label">Activity</div>
-                        <div class="detail-value">${user.posts_count || 0} Posts • ${user.likes_count || 0} Likes</div>
-                    </div>
-                    <div class="detail-group">
-                        <div class="detail-label">Terms Accepted</div>
-                        <div class="detail-value">${user.agreed_to_terms ? 'Yes' : 'No'}</div>
-                    </div>
+                <div class="detail-group">
+                    <div class="detail-label">Phone</div>
+                    <div class="detail-value">${user.phone_number || '<span class="empty">Not provided</span>'}</div>
                 </div>
-
-                ${user.citizenship_front_image || user.citizenship_back_image ? `
-                <div class="document-section">
-                    <div class="document-title">Citizenship Documents</div>
-                    <div class="document-images">
-                        ${user.citizenship_front_image ? `<img src="${user.citizenship_front_image}" alt="Citizenship Front" class="document-image">` : ''}
-                        ${user.citizenship_back_image ? `<img src="${user.citizenship_back_image}" alt="Citizenship Back" class="document-image">` : ''}
-                    </div>
+                <div class="detail-group">
+                    <div class="detail-label">Gender</div>
+                    <div class="detail-value">${user.gender || '<span class="empty">Not provided</span>'}</div>
                 </div>
-                ` : ''}
-
-                <div class="action-bar">
-                    <button class="btn btn-success">${user.is_verified ? 'Unverify' : 'Verify'} User</button>
-                    <button class="btn btn-outline">Edit Profile</button>
-                    <button class="btn btn-warning">Send Warning</button>
-                    <button class="btn btn-danger">Delete Account</button>
+                <div class="detail-group">
+                    <div class="detail-label">Location</div>
+                    <div class="detail-value">${user.city || '<span class="empty">Not provided</span>'}, ${user.district || '<span class="empty">Not provided</span>'} - Ward ${user.ward || '<span class="empty">Not provided</span>'} (${user.area_name || '<span class="empty">Not provided</span>'})</div>
                 </div>
-            `;
-        };
+                <div class="detail-group">
+                    <div class="detail-label">Citizenship ID</div>
+                    <div class="detail-value">${user.citizenship_id_number || '<span class="empty">Not provided</span>'}</div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label">Account Created</div>
+                    <div class="detail-value">${user.created_at ? formatDate(user.created_at) : '<span class="empty">Not provided</span>'}</div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label">Last Updated</div>
+                    <div class="detail-value">${user.updated_at ? formatDate(user.updated_at) : '<span class="empty">Not provided</span>'}</div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label">Activity</div>
+                    <div class="detail-value">${user.posts_count || 0} Posts • ${user.likes_count || 0} Likes</div>
+                </div>
+                <div class="detail-group">
+                    <div class="detail-label">Terms Accepted</div>
+                    <div class="detail-value">${user.agreed_to_terms ? 'Yes' : 'No'}</div>
+                </div>
+            </div>
 
-        // Render pagination
-        const renderPagination = () => {
-            let paginationHTML = '';
+            ${user.citizenship_front_image || user.citizenship_back_image ? `
+            <div class="document-section">
+                <div class="document-title">Citizenship Documents</div>
+                <div class="document-images">
+                    ${user.citizenship_front_image ? `<img src="${user.citizenship_front_image}" alt="Citizenship Front" class="document-image">` : ''}
+                    ${user.citizenship_back_image ? `<img src="${user.citizenship_back_image}" alt="Citizenship Back" class="document-image">` : ''}
+                </div>
+            </div>
+            ` : ''}
 
-            if (currentPage > 1) {
-                paginationHTML += `<button class="page-btn" data-page="${currentPage - 1}">Previous</button>`;
+            <div class="action-bar">
+                <button class="btn btn-success">${user.is_verified ? 'Unverify' : 'Verify'} User</button>
+                <button class="btn btn-outline">Edit Profile</button>
+                <button class="btn btn-warning">Send Warning</button>
+                <button class="btn btn-danger">Delete Account</button>
+            </div>
+        `;
+    };
+
+    // Render pagination
+    const renderPagination = () => {
+        let paginationHTML = '';
+
+        if (currentPage > 1) {
+            paginationHTML += `<button class="page-btn" data-page="${currentPage - 1}">Previous</button>`;
+        }
+
+        if (currentPage > 3) {
+            paginationHTML += `<button class="page-btn" data-page="1">1</button>`;
+            if (currentPage > 4) {
+                paginationHTML += `<span class="page-btn">...</span>`;
             }
+        }
 
-            if (currentPage > 3) {
-                paginationHTML += `<button class="page-btn" data-page="1">1</button>`;
-                if (currentPage > 4) {
-                    paginationHTML += `<span class="page-btn">...</span>`;
-                }
+        for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+            paginationHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+        }
+
+        if (currentPage < totalPages - 2) {
+            if (currentPage < totalPages - 3) {
+                paginationHTML += `<span class="page-btn">...</span>`;
             }
+            paginationHTML += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
+        }
 
-            for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
-                paginationHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
-            }
+        if (currentPage < totalPages) {
+            paginationHTML += `<button class="page-btn" data-page="${currentPage + 1}">Next</button>`;
+        }
 
-            if (currentPage < totalPages - 2) {
-                if (currentPage < totalPages - 3) {
-                    paginationHTML += `<span class="page-btn">...</span>`;
-                }
-                paginationHTML += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
-            }
+        pagination.innerHTML = paginationHTML;
 
-            if (currentPage < totalPages) {
-                paginationHTML += `<button class="page-btn" data-page="${currentPage + 1}">Next</button>`;
-            }
-
-            pagination.innerHTML = paginationHTML;
-
-            document.querySelectorAll('.page-btn[data-page]').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    currentPage = parseInt(e.target.dataset.page);
-                    fetchUsers();
-                });
+        document.querySelectorAll('.page-btn[data-page]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                currentPage = parseInt(e.target.dataset.page);
+                fetchUsers();
             });
-        };
+        });
+    };
 
-        // Fetch users list from Laravel
-        const fetchUsers = async () => {
-            try {
-                usersListBody.innerHTML = '<div class="loading">Loading users...</div>';
-                userDetailCard.classList.remove('active');
+    // Fetch users list from Laravel
+    const fetchUsers = async () => {
+        try {
+            usersListBody.innerHTML = '<div class="loading">Loading users...</div>';
+            userDetailCard.classList.remove('active');
 
-                const response = await fetch(`${API_URL}?page=${currentPage}&limit=${ITEMS_PER_PAGE}`);
-                const data = await response.json();
-
-                totalPages = data.pages;
-
-                if (data.users.length === 0) {
-                    usersListBody.innerHTML = '<div class="empty-state">No users found</div>';
-                } else {
-                    usersListBody.innerHTML = data.users.map(user => renderUserRow(user)).join('');
-
-                    document.querySelectorAll('.user-row').forEach(row => {
-                        row.addEventListener('click', async () => {
-                            selectedUserId = parseInt(row.dataset.userId);
-
-                            document.querySelectorAll('.user-row').forEach(r => {
-                                r.classList.remove('selected');
-                            });
-                            row.classList.add('selected');
-
-                            await fetchUserDetails(selectedUserId);
-                        });
-                    });
+            const response = await fetch(`${API_URL}?page=${currentPage}&limit=${ITEMS_PER_PAGE}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 }
+            });
 
-                renderPagination();
-            } catch (error) {
-                usersListBody.innerHTML = `<div class="loading">Error loading users: ${error.message}</div>`;
-                console.error('Error fetching users:', error);
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response received:', text);
+                throw new Error(`Expected JSON, received ${contentType || 'no content-type'}: ${text.slice(0, 100)}`);
             }
-        };
 
-        // Fetch user by search term (phone number)
-        const fetchUser = async (searchTerm) => {
-            try {
-                searchResultsBody.innerHTML = '<div class="loading">Searching user...</div>';
-                userDetailCard.classList.remove('active');
+            const data = await response.json();
 
-                const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchTerm)}`);
-                const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || `HTTP error! Status: ${response.status}`);
+            }
 
-                console.log('Search response:', data);
+            totalPages = data.pages || data.last_page || 1;
+            const users = data.users || data.data || [];
 
-                if (!data.users || data.users.length === 0) {
-                    searchResultsBody.innerHTML = '<div class="empty-state">' + (data.message || 'No user found with that phone number') + '</div>';
-                } else {
-                    searchResultsBody.innerHTML = data.users.map(user => renderUserRow(user)).join('');
+            if (users.length === 0) {
+                usersListBody.innerHTML = '<div class="empty-state">No users found</div>';
+            } else {
+                usersListBody.innerHTML = users.map(user => renderUserRow(user)).join('');
 
-                    document.querySelectorAll('.user-row').forEach(row => {
-                        row.addEventListener('click', async () => {
-                            selectedUserId = parseInt(row.dataset.userId);
-
-                            document.querySelectorAll('.user-row').forEach(r => {
-                                r.classList.remove('selected');
-                            });
-                            row.classList.add('selected');
-
-                            await fetchUserDetails(selectedUserId);
-                        });
-                    });
-
-                    if (data.users.length === 1) {
-                        selectedUserId = data.users[0].user_id;
-                        document.querySelector(`.user-row[data-user-id="${selectedUserId}"]`).classList.add('selected');
+                document.querySelectorAll('.user-row').forEach(row => {
+                    row.addEventListener('click', async () => {
+                        selectedUserId = parseInt(row.dataset.userId);
+                        document.querySelectorAll('.user-row').forEach(r => r.classList.remove('selected'));
+                        row.classList.add('selected');
                         await fetchUserDetails(selectedUserId);
-                    }
-                }
-            } catch (error) {
-                searchResultsBody.innerHTML = `<div class="loading">Error searching user: ${error.message}</div>`;
-                console.error('Error searching user:', error);
-            }
-        };
-
-        // Fetch single user details
-        const fetchUserDetails = async (userId) => {
-            try {
-                userDetailCard.innerHTML = '<div class="loading">Loading user details...</div>';
-                userDetailCard.classList.add('active');
-
-                const response = await fetch(`/api/users/${userId}`);
-                const data = await response.json();
-
-                console.log('User details response:', data);
-
-                if (response.ok) {
-                    userDetailCard.innerHTML = renderUserDetails(data.user || data);
-                    userDetailCard.scrollIntoView({ behavior: 'smooth' });
-                } else {
-                    userDetailCard.innerHTML = '<div class="loading">' + (data.message || 'User not found') + '</div>';
-                }
-            } catch (error) {
-                userDetailCard.innerHTML = `<div class="loading">Error loading user details: ${error.message}</div>`;
-                console.error('Error fetching user details:', error);
-            }
-        };
-
-        // Handle search
-        const handleSearch = () => {
-            const searchTerm = searchInput.value.trim();
-
-            if (!searchTerm) {
-                searchResultsBody.innerHTML = '<div class="empty-state">Enter search criteria to find users</div>';
-                switchToListView();
-                return;
+                    });
+                });
             }
 
-            switchToSearchView();
-            fetchUser(searchTerm);
-        };
-
-        // Switch to list view
-        const switchToListView = () => {
-            isSearchView = false;
-            listViewBtn.classList.add('active');
-            searchViewBtn.classList.remove('active');
-            listViewContainer.style.display = 'block';
-            searchViewContainer.style.display = 'none';
-        };
-
-        // Switch to search view
-        const switchToSearchView = () => {
-            isSearchView = true;
-            listViewBtn.classList.remove('active');
-            searchViewBtn.classList.add('active');
-            listViewContainer.style.display = 'none';
-            searchViewContainer.style.display = 'block';
-        };
-
-        // Reset view
-        const resetView = () => {
-            searchInput.value = '';
-            switchToListView();
-            currentPage = 1;
-            selectedUserId = null;
-            fetchUsers();
-        };
-
-        // Convert file to Base64
-        const fileToBase64 = (file) => {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = (error) => reject(error);
-                reader.readAsDataURL(file);
-            });
-        };
-
-        // Clear all error messages
-        function clearErrors() {
-            document.querySelectorAll('.error-message').forEach(el => {
-                el.textContent = '';
-            });
+            renderPagination();
+        } catch (error) {
+            console.error('Fetch users error:', error);
+            usersListBody.innerHTML = `<div class="loading" style="color: var(--danger);">Error loading users: ${error.message}</div>`;
         }
+    };
 
-        // Validate form
-        function validateForm() {
-            let isValid = true;
-            clearErrors();
+    // Fetch user by search term (phone number)
+    const fetchUser = async (searchTerm) => {
+        try {
+            searchResultsBody.innerHTML = '<div class="loading">Searching user...</div>';
+            userDetailCard.classList.remove('active');
 
-            const requiredFields = [
-                'first_name', 'last_name', 'username', 'email', 'phone_number',
-                'password', 'password_confirmation', 'district', 'city',
-                'ward', 'area_name', 'citizenship_id_number', 'citizenship_front_image',
-                'citizenship_back_image', 'gender', 'is_verified', 'agreed_to_terms'
-            ];
-
-            requiredFields.forEach(field => {
-                const element = document.getElementById(field);
-                const value = field.includes('image') ? element.files[0] : element.value.trim();
-                if (!value) {
-                    document.getElementById(`${field}_error`).textContent = 'This field is required';
-                    isValid = false;
+            const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchTerm)}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 }
             });
 
-            // Validate email format
-            const email = document.getElementById('email').value.trim();
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                document.getElementById('email_error').textContent = 'Please enter a valid email address';
-                isValid = false;
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response received:', text);
+                throw new Error(`Expected JSON, received ${contentType || 'no content-type'}: ${text.slice(0, 100)}`);
             }
 
-            // Validate phone number
-            const phone_number = document.getElementById('phone_number').value.trim();
-            if (phone_number && !/^\d{10}$/.test(phone_number)) {
-                document.getElementById('phone_number_error').textContent = 'Phone number must be 10 digits';
-                isValid = false;
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || `HTTP error! Status: ${response.status}`);
             }
 
-            // Validate password match
-            const password = document.getElementById('password').value.trim();
-            const passwordConfirmation = document.getElementById('password_confirmation').value.trim();
-            console.log('Password:', JSON.stringify(password));
-            console.log('Password Confirmation:', JSON.stringify(passwordConfirmation));
-            if (password !== passwordConfirmation) {
-                document.getElementById('password_confirmation_error').textContent = 'Passwords do not match';
-                isValid = false;
+            const users = data.users || data.data || [];
+
+            if (users.length === 0) {
+                searchResultsBody.innerHTML = '<div class="empty-state">' + (data.message || 'No user found with that phone number') + '</div>';
             } else {
-                document.getElementById('password_confirmation_error').textContent = '';
-            }
+                searchResultsBody.innerHTML = users.map(user => renderUserRow(user)).join('');
 
-            // Validate password length
-            if (password.length > 0 && password.length < 8) {
-                document.getElementById('password_error').textContent = 'Password must be at least 8 characters';
-                isValid = false;
-            }
-
-            // Validate gender
-            const gender = document.getElementById('gender').value;
-            if (!['Male', 'Female', 'Other'].includes(gender)) {
-                document.getElementById('gender_error').textContent = 'Please select a valid gender';
-                isValid = false;
-            }
-
-            // Validate agreed to terms
-            const agreedToTerms = document.getElementById('agreed_to_terms').checked;
-            if (!agreedToTerms) {
-                document.getElementById('agreed_to_terms_error').textContent = 'You must agree to the terms and conditions';
-                isValid = false;
-            }
-
-            return isValid;
-        }
-
-        // Image preview handlers
-        frontImageInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            const label = frontImageInput.closest('.file-upload-label');
-            if (file) {
-                try {
-                    const dataUrl = await fileToBase64(file);
-                    frontImagePreview.src = dataUrl;
-                    label.classList.add('has-image');
-                } catch (error) {
-                    console.error('Error reading front image:', error);
-                    document.getElementById('citizenship_front_image_error').textContent = 'Error loading image preview';
-                }
-            } else {
-                frontImagePreview.src = '';
-                label.classList.remove('has-image');
-            }
-        });
-
-        backImageInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            const label = backImageInput.closest('.file-upload-label');
-            if (file) {
-                try {
-                    const dataUrl = await fileToBase64(file);
-                    backImagePreview.src = dataUrl;
-                    label.classList.add('has-image');
-                } catch (error) {
-                    console.error('Error reading back image:', error);
-                    document.getElementById('citizenship_back_image_error').textContent = 'Error loading image preview';
-                }
-            } else {
-                backImagePreview.src = '';
-                label.classList.remove('has-image');
-            }
-        });
-
-        // Password toggle functionality
-        document.querySelectorAll('.toggle-password').forEach(button => {
-            button.addEventListener('click', () => {
-                const targetId = button.dataset.target;
-                const input = document.getElementById(targetId);
-                const eyeIcon = button.querySelector('.eye-icon');
-                const eyeSlashIcon = button.querySelector('.eye-slash-icon');
-
-                if (input.type === 'password') {
-                    input.type = 'text';
-                    eyeIcon.style.display = 'none';
-                    eyeSlashIcon.style.display = 'block';
-                } else {
-                    input.type = 'password';
-                    eyeIcon.style.display = 'block';
-                    eyeSlashIcon.style.display = 'none';
-                }
-            });
-        });
-
-        // Event Listeners
-        refreshBtn.addEventListener('click', resetView);
-        searchBtn.addEventListener('click', handleSearch);
-        listViewBtn.addEventListener('click', switchToListView);
-        searchViewBtn.addEventListener('click', () => {
-            if (searchInput.value.trim()) {
-                switchToSearchView();
-            }
-        });
-
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleSearch();
-            }
-        });
-
-        toggleRegistrationBtn.addEventListener('click', () => {
-            registrationForm.style.display = registrationForm.style.display === 'none' ? 'block' : 'none';
-            toggleRegistrationBtn.textContent = registrationForm.style.display === 'none' ? 'Show Registration Form' : 'Hide Registration Form';
-        });
-
-        cancelRegistrationBtn.addEventListener('click', () => {
-            registrationForm.reset();
-            registrationForm.style.display = 'none';
-            toggleRegistrationBtn.textContent = 'Show Registration Form';
-            clearErrors();
-            frontImagePreview.src = '';
-            backImagePreview.src = '';
-            document.querySelectorAll('.file-upload-label').forEach(label => label.classList.remove('has-image'));
-        });
-
-        registerAnotherBtn.addEventListener('click', () => {
-            registrationSuccess.style.display = 'none';
-            registrationForm.style.display = 'block';
-            registrationForm.reset();
-            clearErrors();
-            frontImagePreview.src = '';
-            backImagePreview.src = '';
-            document.querySelectorAll('.file-upload-label').forEach(label => label.classList.remove('has-image'));
-        });
-
-        // Handle form submission
-        registrationForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (!validateForm()) {
-                return;
-            }
-
-            try {
-                // Get form data
-                const form = registrationForm;
-                const data = {
-                    username: form.username.value.trim(),
-                    first_name: form.first_name.value.trim(),
-                    last_name: form.last_name.value.trim(),
-                    email: form.email.value.trim(),
-                    phone_number: form.phone_number.value.trim(),
-                    password: form.password.value.trim(),
-                    password_confirmation: form.password_confirmation.value.trim(),
-                    district: form.district.value.trim(),
-                    city: form.city.value.trim(),
-                    ward: parseInt(form.ward.value),
-                    area_name: form.area_name.value.trim(),
-                    citizenship_id_number: form.citizenship_id_number.value.trim(),
-                    gender: form.gender.value,
-                    is_verified: form.is_verified.value === '1',
-                    agreed_to_terms: form.agreed_to_terms.checked
-                };
-
-                // Convert images to Base64
-                const frontImageFile = form.citizenship_front_image.files[0];
-                const backImageFile = form.citizenship_back_image.files[0];
-
-                if (frontImageFile) {
-                    data.citizenship_front_image = await fileToBase64(frontImageFile);
-                }
-                if (backImageFile) {
-                    data.citizenship_back_image = await fileToBase64(backImageFile);
-                }
-
-                // Send request
-                const response = await fetch('/api/users', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify(data)
+                document.querySelectorAll('.user-row').forEach(row => {
+                    row.addEventListener('click', async () => {
+                        selectedUserId = parseInt(row.dataset.userId);
+                        document.querySelectorAll('.user-row').forEach(r => r.classList.remove('selected'));
+                        row.classList.add('selected');
+                        await fetchUserDetails(selectedUserId);
+                    });
                 });
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    registrationForm.style.display = 'none';
-                    registrationSuccess.style.display = 'block';
-                    toggleRegistrationBtn.textContent = 'Show Registration Form';
-                    registrationForm.reset();
-                    clearErrors();
-                    frontImagePreview.src = '';
-                    backImagePreview.src = '';
-                    document.querySelectorAll('.file-upload-label').forEach(label => label.classList.remove('has-image'));
-                    fetchUsers();
-                } else {
-                    if (result.errors) {
-                        Object.keys(result.errors).forEach(field => {
-                            const errorElement = document.getElementById(`${field}_error`);
-                            if (errorElement) {
-                                errorElement.textContent = result.errors[field][0];
-                            }
-                        });
-                    } else {
-                        alert(result.message || 'Error registering user');
-                    }
+                if (users.length === 1) {
+                    selectedUserId = users[0].user_id;
+                    const row = document.querySelector(`.user-row[data-user-id="${selectedUserId}"]`);
+                    if (row) row.classList.add('selected');
+                    await fetchUserDetails(selectedUserId);
                 }
-            } catch (error) {
-                console.error('Error registering user:', error);
-                alert('An error occurred while registering the user: ' + error.message);
+            }
+        } catch (error) {
+            console.error('Search user error:', error);
+            searchResultsBody.innerHTML = `<div class="loading" style="color: var(--danger);">Error searching user: ${error.message}</div>`;
+        }
+    };
+
+    // Fetch single user details
+    const fetchUserDetails = async (userId) => {
+        try {
+            userDetailCard.innerHTML = '<div class="loading">Loading user details...</div>';
+            userDetailCard.classList.add('active');
+
+            const response = await fetch(`/api/users/${userId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response received:', text);
+                throw new Error(`Expected JSON, received ${contentType || 'no content-type'}: ${text.slice(0, 100)}`);
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || `HTTP error! Status: ${response.status}`);
+            }
+
+            userDetailCard.innerHTML = renderUserDetails(data.user || data);
+            userDetailCard.scrollIntoView({ behavior: 'smooth' });
+        } catch (error) {
+            console.error('Fetch user details error:', error);
+            userDetailCard.innerHTML = `<div class="loading" style="color: var(--danger);">Error loading user details: ${error.message}</div>`;
+        }
+    };
+
+    // Handle search
+    const handleSearch = () => {
+        const searchTerm = searchInput.value.trim();
+        if (!searchTerm) {
+            searchResultsBody.innerHTML = '<div class="empty-state">Enter search criteria to find users</div>';
+            switchToListView();
+            return;
+        }
+        switchToSearchView();
+        fetchUser(searchTerm);
+    };
+
+    // Switch to list view
+    const switchToListView = () => {
+        isSearchView = false;
+        listViewBtn.classList.add('active');
+        searchViewBtn.classList.remove('active');
+        listViewContainer.style.display = 'block';
+        searchViewContainer.style.display = 'none';
+    };
+
+    // Switch to search view
+    const switchToSearchView = () => {
+        isSearchView = true;
+        listViewBtn.classList.remove('active');
+        searchViewBtn.classList.add('active');
+        listViewContainer.style.display = 'none';
+        searchViewContainer.style.display = 'block';
+    };
+
+    // Reset view
+    const resetView = () => {
+        searchInput.value = '';
+        switchToListView();
+        currentPage = 1;
+        selectedUserId = null;
+        fetchUsers();
+    };
+
+    // Convert file to Base64
+    const fileToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+        });
+    };
+
+    // Clear all error messages
+    function clearErrors() {
+        document.querySelectorAll('.error-message').forEach(el => {
+            el.textContent = '';
+        });
+    }
+
+    // Validate form
+    function validateForm() {
+        let isValid = true;
+        clearErrors();
+
+        const requiredFields = [
+            'first_name', 'last_name', 'username', 'email', 'phone_number',
+            'password', 'password_confirmation', 'district', 'city',
+            'ward', 'area_name', 'citizenship_id_number', 'citizenship_front_image',
+            'citizenship_back_image', 'gender', 'is_verified', 'agreed_to_terms'
+        ];
+
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            const value = field.includes('image') ? element.files[0] : element.value.trim();
+            if (!value) {
+                document.getElementById(`${field}_error`).textContent = 'This field is required';
+                isValid = false;
             }
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchUsers();
+        const email = document.getElementById('email').value.trim();
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            document.getElementById('email_error').textContent = 'Please enter a valid email address';
+            isValid = false;
+        }
+
+        const phone_number = document.getElementById('phone_number').value.trim();
+        if (phone_number && !/^\d{10}$/.test(phone_number)) {
+            document.getElementById('phone_number_error').textContent = 'Phone number must be 10 digits';
+            isValid = false;
+        }
+
+        const password = document.getElementById('password').value.trim();
+        const passwordConfirmation = document.getElementById('password_confirmation').value.trim();
+        if (password !== passwordConfirmation) {
+            document.getElementById('password_confirmation_error').textContent = 'Passwords do not match';
+            isValid = false;
+        }
+
+        if (password.length > 0 && password.length < 8) {
+            document.getElementById('password_error').textContent = 'Password must be at least 8 characters';
+            isValid = false;
+        }
+
+        const gender = document.getElementById('gender').value;
+        if (!['Male', 'Female', 'Other'].includes(gender)) {
+            document.getElementById('gender_error').textContent = 'Please select a valid gender';
+            isValid = false;
+        }
+
+        const agreedToTerms = document.getElementById('agreed_to_terms').checked;
+        if (!agreedToTerms) {
+            document.getElementById('agreed_to_terms_error').textContent = 'You must agree to the terms and conditions';
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    // Image preview handlers
+    frontImageInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        const label = frontImageInput.closest('.file-upload-label');
+        if (file) {
+            try {
+                const dataUrl = await fileToBase64(file);
+                frontImagePreview.src = dataUrl;
+                label.classList.add('has-image');
+            } catch (error) {
+                console.error('Error reading front image:', error);
+                document.getElementById('citizenship_front_image_error').textContent = 'Error loading image preview';
+            }
+        } else {
+            frontImagePreview.src = '';
+            label.classList.remove('has-image');
+        }
+    });
+
+    backImageInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        const label = backImageInput.closest('.file-upload-label');
+        if (file) {
+            try {
+                const dataUrl = await fileToBase64(file);
+                backImagePreview.src = dataUrl;
+                label.classList.add('has-image');
+            } catch (error) {
+                console.error('Error reading back image:', error);
+                document.getElementById('citizenship_back_image_error').textContent = 'Error loading image preview';
+            }
+        } else {
+            backImagePreview.src = '';
+            label.classList.remove('has-image');
+        }
+    });
+
+    // Password toggle functionality
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', () => {
+            const targetId = button.dataset.target;
+            const input = document.getElementById(targetId);
+            const eyeIcon = button.querySelector('.eye-icon');
+            const eyeSlashIcon = button.querySelector('.eye-slash-icon');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeIcon.style.display = 'none';
+                eyeSlashIcon.style.display = 'block';
+            } else {
+                input.type = 'password';
+                eyeIcon.style.display = 'block';
+                eyeSlashIcon.style.display = 'none';
+            }
         });
-    </script>
+    });
+
+    // Event Listeners
+    refreshBtn.addEventListener('click', resetView);
+    searchBtn.addEventListener('click', handleSearch);
+    listViewBtn.addEventListener('click', switchToListView);
+    searchViewBtn.addEventListener('click', () => {
+        if (searchInput.value.trim()) {
+            switchToSearchView();
+        }
+    });
+
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    });
+
+    toggleRegistrationBtn.addEventListener('click', () => {
+        registrationForm.style.display = registrationForm.style.display === 'none' ? 'block' : 'none';
+        toggleRegistrationBtn.textContent = registrationForm.style.display === 'none' ? 'Show Registration Form' : 'Hide Registration Form';
+    });
+
+    cancelRegistrationBtn.addEventListener('click', () => {
+        registrationForm.reset();
+        registrationForm.style.display = 'none';
+        toggleRegistrationBtn.textContent = 'Show Registration Form';
+        clearErrors();
+        frontImagePreview.src = '';
+        backImagePreview.src = '';
+        document.querySelectorAll('.file-upload-label').forEach(label => label.classList.remove('has-image'));
+    });
+
+    registerAnotherBtn.addEventListener('click', () => {
+        registrationSuccess.style.display = 'none';
+        registrationForm.style.display = 'block';
+        registrationForm.reset();
+        clearErrors();
+        frontImagePreview.src = '';
+        backImagePreview.src = '';
+        document.querySelectorAll('.file-upload-label').forEach(label => label.classList.remove('has-image'));
+    });
+
+    // Handle form submission
+    registrationForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!validateForm()) {
+            return;
+        }
+
+        try {
+            const form = registrationForm;
+            const data = {
+                username: form.username.value.trim(),
+                first_name: form.first_name.value.trim(),
+                last_name: form.last_name.value.trim(),
+                email: form.email.value.trim(),
+                phone_number: form.phone_number.value.trim(),
+                password: form.password.value.trim(),
+                password_confirmation: form.password_confirmation.value.trim(),
+                district: form.district.value.trim(),
+                city: form.city.value.trim(),
+                ward: parseInt(form.ward.value),
+                area_name: form.area_name.value.trim(),
+                citizenship_id_number: form.citizenship_id_number.value.trim(),
+                gender: form.gender.value,
+                is_verified: form.is_verified.value === '1',
+                agreed_to_terms: form.agreed_to_terms.checked
+            };
+
+            const frontImageFile = form.citizenship_front_image.files[0];
+            const backImageFile = form.citizenship_back_image.files[0];
+
+            if (frontImageFile) {
+                data.citizenship_front_image = await fileToBase64(frontImageFile);
+            }
+            if (backImageFile) {
+                data.citizenship_back_image = await fileToBase64(backImageFile);
+            }
+
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(data)
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response received:', text);
+                throw new Error(`Expected JSON, received ${contentType || 'no content-type'}: ${text.slice(0, 100)}`);
+            }
+
+            const result = await response.json();
+
+            if (response.ok) {
+                registrationForm.style.display = 'none';
+                registrationSuccess.style.display = 'block';
+                toggleRegistrationBtn.textContent = 'Show Registration Form';
+                registrationForm.reset();
+                clearErrors();
+                frontImagePreview.src = '';
+                backImagePreview.src = '';
+                document.querySelectorAll('.file-upload-label').forEach(label => label.classList.remove('has-image'));
+                fetchUsers();
+            } else {
+                if (result.errors) {
+                    Object.keys(result.errors).forEach(field => {
+                        const errorElement = document.getElementById(`${field}_error`);
+                        if (errorElement) {
+                            errorElement.textContent = result.errors[field][0];
+                        }
+                    });
+                } else {
+                    alert(result.message || 'Error registering user');
+                }
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            alert('An error occurred while registering the user: ' + error.message);
+        }
+    });
+
+    // Check authentication status
+    const checkAuth = async () => {
+        try {
+            const response = await fetch('/api/check-auth', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response received:', text);
+                throw new Error(`Expected JSON, received ${contentType || 'no content-type'}: ${text.slice(0, 100)}`);
+            }
+
+            const data = await response.json();
+
+            if (!response.ok || data.status === 'error') {
+                usersListBody.innerHTML = '<div class="loading" style="color: var(--danger);">Please log in to access user data</div>';
+                window.location.href = '/superadmin/login';
+            } else {
+                fetchUsers();
+            }
+        } catch (error) {
+            console.error('Auth check error:', error);
+            usersListBody.innerHTML = `<div class="loading" style="color: var(--danger);">Error checking authentication: ${error.message}</div>`;
+            window.location.href = '/superadmin/login';
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        checkAuth();
+    });
+</script>
 </body>
 </html>
