@@ -1430,7 +1430,7 @@
     };
 
     document.addEventListener('DOMContentLoaded', () => {
-        checkAuth();
+       fetchUsers();
     });
 </script>
 </body>

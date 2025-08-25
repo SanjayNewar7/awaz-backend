@@ -4,13 +4,19 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('superadmin.login');
-Route::post('/login', [AuthController::class, 'login'])->name('superadmin.login');
-Route::get('/superadmin', [AuthController::class, 'dashboard'])->name('superadmin.dashboard');
+Route::post('/login', [AuthController::class, 'login'])->name('superadmin.login.post');
 Route::post('/superadmin/logout', [AuthController::class, 'logout'])->name('superadmin.logout');
-Route::post('/users', [AuthController::class, 'store']); // Add this line for signup
-Route::get('/users', [AuthController::class, 'getUsers']);
-Route::get('/users/search', [AuthController::class, 'searchUsers']);
-Route::get('/users/{userId}', [AuthController::class, 'getUser']);
+
+// SuperAdmin Dashboard Routes (protected by superadmin middleware)
+Route::middleware(['superadmin'])->group(function () {
+    Route::get('/superadmin', [AuthController::class, 'dashboard'])->name('superadmin.dashboard');
+
+    // API routes for SuperAdmin dashboard
+    Route::get('/api/users', [UserController::class, 'index']);
+    Route::get('/api/users/search', [UserController::class, 'search']);
+    Route::get('/api/users/{userId}', [UserController::class, 'show']);
+    Route::post('/api/users', [AuthController::class, 'store']);
+});
 
 Route::group([], function () {
     Route::get('/storage/{path}', function ($path) {

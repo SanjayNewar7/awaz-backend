@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\IssueController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\NotificationController;
 
 Route::prefix('users')->middleware('api')->group(function () {
     Route::get('/', [UserController::class, 'index']);
@@ -16,30 +17,26 @@ Route::prefix('users')->middleware('api')->group(function () {
 });
 
 Route::post('/users', [AuthController::class, 'store']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/user-login', [AuthController::class, 'userLogin']);
+Route::post('/login', [AuthController::class, 'login'])->name('api.login'); // Unique name
+Route::post('/user-login', [AuthController::class, 'userLogin'])->name('api.user-login'); // Unique name
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [AuthController::class, 'getUsers']);
     Route::post('/users/{userId}/like', [ProfileController::class, 'toggleLike']);
-
-    // Specific 'me' routes must come BEFORE the dynamic {userId} route
     Route::get('/users/me', [AuthController::class, 'getCurrentUser']);
     Route::put('/users/me', [AuthController::class, 'updateProfile']);
-
-    // Dynamic {userId} route now after 'me'
     Route::get('/users/{userId}', [AuthController::class, 'getUser']);
-
-
     Route::post('/issues', [IssueController::class, 'store']);
-
-    // Add these new routes for issues
     Route::get('/issues', [IssueController::class, 'index']);
     Route::post('/issues/{id}/react', [IssueController::class, 'addReaction']);
     Route::post('/issues/{id}/comment', [IssueController::class, 'addComment']);
     Route::get('/issues/{id}/comments', [IssueController::class, 'getComments']);
-
-    // Add route to get posts
     Route::get('/posts', [PostController::class, 'index']);
+    Route::get('/posts/by_issue/{issue_id}', [PostController::class, 'getByIssueId']);
+    Route::get('/posts/{id}', [PostController::class, 'show']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('api.notifications');
 });
+
