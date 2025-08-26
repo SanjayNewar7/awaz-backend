@@ -17,8 +17,8 @@ Route::prefix('users')->middleware('api')->group(function () {
 });
 
 Route::post('/users', [AuthController::class, 'store']);
-Route::post('/login', [AuthController::class, 'login'])->name('api.login'); // Unique name
-Route::post('/user-login', [AuthController::class, 'userLogin'])->name('api.user-login'); // Unique name
+Route::post('/login', [AuthController::class, 'login'])->name('api.login');
+Route::post('/user-login', [AuthController::class, 'userLogin'])->name('api.user-login');
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users/{userId}/like', [ProfileController::class, 'toggleLike']);
     Route::get('/users/me', [AuthController::class, 'getCurrentUser']);
     Route::put('/users/me', [AuthController::class, 'updateProfile']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::get('/users/{userId}', [AuthController::class, 'getUser']);
     Route::post('/issues', [IssueController::class, 'store']);
     Route::get('/issues', [IssueController::class, 'index']);

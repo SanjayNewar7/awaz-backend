@@ -20,6 +20,11 @@ class Post extends Model
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
+    public function issue()
+    {
+        return $this->belongsTo(Issue::class, 'issue_id', 'id');
+    }
+
     public function getFormattedCreatedAt()
     {
         return Carbon::parse($this->created_at)->diffForHumans();

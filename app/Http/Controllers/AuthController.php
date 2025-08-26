@@ -57,8 +57,8 @@ class AuthController extends Controller
                 'gender' => 'required|in:Male,Female,Other',
                 'is_verified' => 'required|boolean',
                 'agreed_to_terms' => 'required|boolean',
-                'citizenship_front_image' => 'required|string', // Base64
-                'citizenship_back_image' => 'required|string', // Base64
+                'citizenship_front_image' => 'required|string',
+                'citizenship_back_image' => 'required|string',
             ]);
 
             // Set default profile image based on gender
@@ -107,7 +107,7 @@ class AuthController extends Controller
                 $extension = strpos($meta, 'image/png') !== false ? 'png' : 'jpg';
                 list(, $base64Image) = explode(',', $base64Image);
             } else {
-                $extension = 'jpg'; // Default to jpg if no MIME type
+                $extension = 'jpg';
             }
 
             $imageData = base64_decode($base64Image);
@@ -120,7 +120,7 @@ class AuthController extends Controller
             }
 
             $filename = $pathPrefix . uniqid() . '.' . $extension;
-            $storagePath = 'images/' . $filename; // Save to images/{subfolder}/
+            $storagePath = 'images/' . $filename;
 
             if (!Storage::disk('public')->put($storagePath, $imageData)) {
                 throw new \Exception('Failed to save image to storage');
@@ -163,20 +163,16 @@ class AuthController extends Controller
                 'profile_image' => 'sometimes|string',
             ]);
 
-            // Handle profile image
             $profileImagePath = $user->profile_image;
             if (isset($validated['profile_image'])) {
-                // Delete old profile image if it's not a default avatar
                 if ($user->profile_image && !in_array($user->profile_image, ['images/users/male_avatar.png', 'images/users/female_avatar.png'])) {
                     Storage::disk('public')->delete($user->profile_image);
                 }
                 $profileImagePath = $this->saveBase64Image($validated['profile_image'], 'users/profile_');
             } elseif (isset($validated['gender']) && $validated['gender'] !== $user->gender) {
-                // Update default avatar if gender changes
                 $profileImagePath = $validated['gender'] === 'Male' ? 'images/users/male_avatar.png' : 'images/users/female_avatar.png';
             }
 
-            // Handle citizenship images
             $citizenshipFrontImagePath = $user->citizenship_front_image;
             if (isset($validated['citizenship_front_image'])) {
                 if ($user->citizenship_front_image) {
@@ -222,6 +218,47 @@ class AuthController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Profile update failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function changePassword(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+
+            $validated = $request->validate([
+                'current_password' => 'required|string',
+                'new_password' => 'required|string|min:8|confirmed',
+            ]);
+
+            if (!Hash::check($validated['current_password'], $user->password_hash)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Current password is incorrect'
+                ], 401);
+            }
+
+            $user->update([
+                'password_hash' => bcrypt($validated['new_password'])
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Password changed successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Password change error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to change password',
                 'error' => $e->getMessage()
             ], 500);
         }
