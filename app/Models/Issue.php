@@ -39,4 +39,3 @@ class Issue extends Model
         return $value ? Storage::url($value) : null;
     }
 }
-

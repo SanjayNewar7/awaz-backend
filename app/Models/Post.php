@@ -35,4 +35,3 @@ class Post extends Model
         return $value ? Storage::url($value) : null;
     }
 }
-

@@ -7,17 +7,6 @@ Route::get('/', [AuthController::class, 'showLoginForm'])->name('superadmin.logi
 Route::post('/login', [AuthController::class, 'login'])->name('superadmin.login.post');
 Route::post('/superadmin/logout', [AuthController::class, 'logout'])->name('superadmin.logout');
 
-// SuperAdmin Dashboard Routes (protected by superadmin middleware)
-Route::middleware(['superadmin'])->group(function () {
-    Route::get('/superadmin', [AuthController::class, 'dashboard'])->name('superadmin.dashboard');
-
-    // API routes for SuperAdmin dashboard
-    Route::get('/api/users', [UserController::class, 'index']);
-    Route::get('/api/users/search', [UserController::class, 'search']);
-    Route::get('/api/users/{userId}', [UserController::class, 'show']);
-    Route::post('/api/users', [AuthController::class, 'store']);
-});
-
 Route::group([], function () {
     Route::get('/storage/{path}', function ($path) {
         $fullPath = storage_path('app/public/' . $path);
@@ -31,4 +20,3 @@ Route::group([], function () {
         return response()->json(['message' => 'File not found'], 404);
     })->where('path', '.*');
 });
-?>
