@@ -5,20 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Awaz - SuperAdmin Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-light: #6366f1;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-300: #d1d5db;
-            --gray-500: #6b7280;
-            --gray-700: #374151;
+            --primary: #1e3a8a; /* Deep blue */
+            --primary-light: #3b82f6; /* Lighter blue */
+            --secondary: #60a5fa; /* Soft blue */
+            --accent: #93c5fd; /* Very light blue */
+            --danger: #dc2626; /* Red */
+            --warning: #f59e0b; /* Yellow */
+            --success: #22c55e; /* Green */
+            --background: #f0f5ff; /* Light blue-gray background */
+            --card-bg: #ffffff; /* White card background */
+            --border: #bfdbfe; /* Light blue border */
+            --text: #1e293b; /* Dark slate */
+            --text-light: #64748b; /* Light slate */
         }
 
         * {
@@ -28,14 +29,14 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--gray-50);
-            color: var(--gray-700);
-            line-height: 1.5;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: 0 auto;
             padding: 2rem;
         }
@@ -45,33 +46,40 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--gray-200);
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .logo {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--primary);
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
         }
 
         .btn {
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
             font-weight: 500;
             cursor: pointer;
             border: none;
-            transition: all 0.2s;
-            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .btn-primary {
-            background-color: var(--primary);
+            background-color: var(--primary-light);
             color: white;
         }
 
         .btn-primary:hover {
-            background-color: var(--primary-light);
+            background-color: var(--secondary);
+            transform: translateY(-1px);
         }
 
         .btn-danger {
@@ -79,9 +87,19 @@
             color: white;
         }
 
+        .btn-danger:hover {
+            background-color: #b91c1c;
+            transform: translateY(-1px);
+        }
+
         .btn-warning {
             background-color: var(--warning);
             color: white;
+        }
+
+        .btn-warning:hover {
+            background-color: #d97706;
+            transform: translateY(-1px);
         }
 
         .btn-success {
@@ -89,82 +107,102 @@
             color: white;
         }
 
+        .btn-success:hover {
+            background-color: #16a34a;
+            transform: translateY(-1px);
+        }
+
         .btn-outline {
             background-color: transparent;
-            border: 1px solid var(--gray-300);
-            color: var(--gray-700);
+            border: 1px solid var(--border);
+            color: var(--text);
         }
 
         .btn-outline:hover {
-            background-color: var(--gray-100);
+            background-color: var(--accent);
+            border-color: var(--primary-light);
+            color: var(--primary);
         }
 
         .search-container {
-            background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
         }
 
         .search-title {
-            font-size: 1.125rem;
+            font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 1rem;
+            color: var(--primary);
         }
 
         .search-box {
             display: flex;
             gap: 1rem;
+            align-items: center;
         }
 
         .search-input {
             flex: 1;
             padding: 0.75rem 1rem;
-            border: 1px solid var(--gray-300);
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            background-color: var(--background);
+            transition: all 0.3s ease;
         }
 
         .search-input:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .search-hint {
-            font-size: 0.75rem;
-            color: var(--gray-500);
+            font-size: 0.8rem;
+            color: var(--text-light);
             margin-top: 0.5rem;
         }
 
         .view-toggle {
             display: flex;
-            background-color: var(--gray-100);
-            border-radius: 0.375rem;
-            padding: 0.25rem;
-            margin-bottom: 1.5rem;
+            background-color: var(--background);
+            border-radius: 0.5rem;
+            padding: 0.3rem;
+            margin-bottom: 2rem;
+            gap: 0.5rem;
         }
 
         .view-toggle-btn {
             flex: 1;
-            padding: 0.5rem;
+            padding: 0.75rem;
             text-align: center;
             cursor: pointer;
-            border-radius: 0.25rem;
+            border-radius: 0.5rem;
             font-weight: 500;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            color: var(--text-light);
         }
 
         .view-toggle-btn.active {
-            background-color: white;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            background-color: var(--primary-light);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .view-toggle-btn:hover {
+            background-color: var(--secondary);
+            color: white;
         }
 
         .users-list {
-            background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             overflow: hidden;
         }
 
@@ -172,43 +210,43 @@
             display: grid;
             grid-template-columns: 80px 1fr 1fr 1fr 1fr;
             padding: 1rem 1.5rem;
-            background-color: var(--gray-100);
-            font-size: 0.75rem;
+            background-color: var(--background);
+            font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: var(--gray-500);
+            color: var(--text-light);
         }
 
         .user-row {
             display: grid;
             grid-template-columns: 80px 1fr 1fr 1fr 1fr;
             padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--gray-200);
+            border-bottom: 1px solid var(--border);
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s ease;
         }
 
         .user-row:hover {
-            background-color: var(--gray-50);
+            background-color: var(--accent);
         }
 
         .user-row.selected {
-            background-color: #e0e7ff;
+            background-color: rgba(59, 130, 246, 0.1);
         }
 
         .user-cell {
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             display: flex;
             align-items: center;
         }
 
         .user-card {
-            background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-            margin-top: 1.5rem;
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            margin-top: 2rem;
             display: none;
         }
 
@@ -222,27 +260,30 @@
             align-items: center;
             margin-bottom: 1.5rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid var(--gray-200);
+            border-bottom: 1px solid var(--border);
         }
 
         .user-title {
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             font-weight: 600;
+            color: var(--primary);
         }
 
         .user-subtitle {
-            color: var(--gray-500);
-            font-size: 0.875rem;
+            color: var(--text-light);
+            font-size: 0.9rem;
             margin-top: 0.25rem;
         }
 
         .status-badge {
             display: inline-flex;
             align-items: center;
-            padding: 0.25rem 0.75rem;
+            padding: 0.5rem 1rem;
             border-radius: 9999px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 500;
+            background-color: var(--accent);
+            color: var(--primary);
         }
 
         .verified {
@@ -257,7 +298,7 @@
 
         .user-details {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 1.5rem;
         }
 
@@ -266,20 +307,20 @@
         }
 
         .detail-label {
-            font-size: 0.75rem;
-            color: var(--gray-500);
+            font-size: 0.8rem;
+            color: var(--text-light);
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 0.25rem;
         }
 
         .detail-value {
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             font-weight: 500;
         }
 
         .detail-value.empty {
-            color: var(--gray-500);
+            color: var(--text-light);
             font-style: italic;
         }
 
@@ -289,18 +330,18 @@
             gap: 0.75rem;
             margin-top: 1.5rem;
             padding-top: 1.5rem;
-            border-top: 1px solid var(--gray-200);
+            border-top: 1px solid var(--border);
         }
 
         .document-section {
-            margin-top: 1.5rem;
+            margin-top: 2rem;
         }
 
         .document-title {
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.75rem;
-            color: var(--gray-700);
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary);
         }
 
         .document-images {
@@ -309,74 +350,88 @@
         }
 
         .document-image {
-            width: 180px;
-            height: 120px;
+            width: 200px;
+            height: 140px;
             object-fit: cover;
-            border-radius: 0.375rem;
-            border: 1px solid var(--gray-200);
-            background-color: var(--gray-100);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            background-color: var(--background);
+            transition: transform 0.3s ease;
+        }
+
+        .document-image:hover {
+            transform: scale(1.05);
         }
 
         .loading {
             display: flex;
             justify-content: center;
             padding: 2rem;
-            color: var(--gray-500);
+            color: var(--text-light);
+            font-size: 0.9rem;
         }
 
         .empty-state {
             text-align: center;
             padding: 3rem;
-            color: var(--gray-500);
+            color: var(--text-light);
+            font-size: 1rem;
         }
 
         .pagination {
             display: flex;
             justify-content: center;
             gap: 0.5rem;
-            margin-top: 1.5rem;
+            margin-top: 2rem;
             padding-top: 1.5rem;
-            border-top: 1px solid var(--gray-200);
+            border-top: 1px solid var(--border);
         }
 
         .page-btn {
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.375rem;
-            border: 1px solid var(--gray-300);
-            background-color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            background-color: var(--card-bg);
             cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
         }
 
         .page-btn.active {
-            background-color: var(--primary);
+            background-color: var(--primary-light);
             color: white;
-            border-color: var(--primary);
+            border-color: var(--primary-light);
+        }
+
+        .page-btn:hover {
+            background-color: var(--secondary);
+            color: white;
         }
 
         .registration-container {
-            background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
         }
 
         .registration-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .registration-header h2 {
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             font-weight: 600;
-            color: var(--gray-700);
+            color: var(--primary);
         }
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2rem;
             margin-bottom: 1.5rem;
         }
@@ -388,12 +443,12 @@
         }
 
         .form-section-title {
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
-            color: var(--gray-700);
-            margin-bottom: 0.5rem;
+            color: var(--primary);
+            margin-bottom: 0.75rem;
             padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--gray-200);
+            border-bottom: 1px solid var(--border);
         }
 
         .form-group {
@@ -403,24 +458,26 @@
         }
 
         .form-group label {
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             font-weight: 500;
-            color: var(--gray-700);
+            color: var(--text);
         }
 
         .form-group input,
         .form-group select {
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            background-color: var(--background);
+            transition: all 0.3s ease;
         }
 
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .password-group {
@@ -435,7 +492,7 @@
 
         .password-wrapper input {
             width: 100%;
-            padding-right: 2.5rem;
+            padding-right: 3rem;
         }
 
         .toggle-password {
@@ -448,13 +505,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 20px;
-            height: 20px;
-            color: var(--gray-500);
+            width: 24px;
+            height: 24px;
+            color: var(--text-light);
+            transition: color 0.3s ease;
         }
 
         .toggle-password:hover {
-            color: var(--primary);
+            color: var(--primary-light);
         }
 
         .toggle-password svg {
@@ -474,25 +532,25 @@
             align-items: center;
             justify-content: center;
             padding: 1rem;
-            border: 1px dashed var(--gray-300);
-            border-radius: 0.375rem;
-            background-color: var(--gray-50);
+            border: 2px dashed var(--border);
+            border-radius: 0.5rem;
+            background-color: var(--background);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             width: 100%;
             text-align: center;
             position: relative;
-            height: 120px;
+            height: 140px;
         }
 
         .file-upload-label:hover {
-            background-color: var(--gray-100);
-            border-color: var(--gray-400);
+            background-color: var(--accent);
+            border-color: var(--primary-light);
         }
 
         .file-upload-label span {
-            font-size: 0.875rem;
-            color: var(--gray-700);
+            font-size: 0.9rem;
+            color: var(--text);
         }
 
         .file-upload-label input[type="file"] {
@@ -503,7 +561,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 0.375rem;
+            border-radius: 0.5rem;
             display: none;
             position: absolute;
             top: 0;
@@ -532,13 +590,13 @@
             display: flex;
             justify-content: flex-end;
             gap: 0.75rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--gray-200);
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
         }
 
         .error-message {
             color: var(--danger);
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             margin-top: 0.25rem;
             min-height: 1rem;
         }
@@ -550,7 +608,7 @@
             padding: 1rem;
             background-color: #f0fdf4;
             border: 1px solid #bbf7d0;
-            border-radius: 0.375rem;
+            border-radius: 0.5rem;
             color: #166534;
             margin-bottom: 1rem;
         }
@@ -570,8 +628,7 @@
         <div class="search-container">
             <div class="search-title">Search User</div>
             <div class="search-box">
-                <input type="text" class="search-input" id="search-input"
-                       placeholder="Search by phone number">
+                <input type="text" class="search-input" id="search-input" placeholder="Search by phone number">
                 <button class="btn btn-primary" id="search-btn">Search</button>
             </div>
             <div class="search-hint">
@@ -791,7 +848,7 @@
         </div>
     </div>
 
-   <script>
+    <script>
     // API Configuration
     const API_URL = '/api/users';
     const ITEMS_PER_PAGE = 10;
@@ -1430,8 +1487,8 @@
     };
 
     document.addEventListener('DOMContentLoaded', () => {
-       fetchUsers();
+        fetchUsers();
     });
-</script>
+    </script>
 </body>
 </html>

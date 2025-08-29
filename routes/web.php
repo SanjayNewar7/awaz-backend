@@ -4,8 +4,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('superadmin.login');
+
 Route::post('/login', [AuthController::class, 'login'])->name('superadmin.login.post');
 Route::post('/superadmin/logout', [AuthController::class, 'logout'])->name('superadmin.logout');
+ Route::get('/users', [AuthController::class, 'getUsers']);
+ Route::get('/superadmin/dashboard', [AuthController::class, 'dashboard'])->name('superadmin.dashboard');
+  Route::get('/users/{userId}', [AuthController::class, 'getUser']);
 
 Route::group([], function () {
     Route::get('/storage/{path}', function ($path) {

@@ -8,6 +8,7 @@ use App\Http\Controllers\IssueController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SuperAdminController;
 
 Route::prefix('users')->middleware('api')->group(function () {
     Route::get('/', [UserController::class, 'index']);
@@ -16,13 +17,22 @@ Route::prefix('users')->middleware('api')->group(function () {
     Route::get('/search', [UserController::class, 'search']);
 });
 
+Route::prefix('superadmin')->middleware('auth:sanctum')->group(function () {
+    Route::get('/users', [SuperAdminController::class, 'getUsers']);
+    Route::get('/users/{userId}', [SuperAdminController::class, 'getUser']);
+    Route::get('/users/search', [SuperAdminController::class, 'searchUsers']);
+    Route::post('/users/{userId}/verify', [SuperAdminController::class, 'toggleVerification']);
+    Route::delete('/users/{userId}', [SuperAdminController::class, 'deleteUser']);
+    Route::post('/users/{userId}/warn', [SuperAdminController::class, 'sendWarning']);
+    Route::get('/check-auth', [SuperAdminController::class, 'checkAuth']);
+});
+
 Route::post('/users', [AuthController::class, 'store']);
 Route::post('/login', [AuthController::class, 'login'])->name('api.login');
 Route::post('/user-login', [AuthController::class, 'userLogin'])->name('api.user-login');
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/users', [AuthController::class, 'getUsers']);
     Route::post('/users/{userId}/like', [ProfileController::class, 'toggleLike']);
     Route::get('/users/me', [AuthController::class, 'getCurrentUser']);
     Route::put('/users/me', [AuthController::class, 'updateProfile']);

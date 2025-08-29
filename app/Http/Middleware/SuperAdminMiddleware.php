@@ -4,13 +4,20 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class SuperAdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!session()->has('superadmin_authenticated') || !session('superadmin_authenticated')) {
+        if (!Auth::guard('sanctum')->check()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized: Superadmin access required'
+                ], 401);
+            }
             return redirect()->route('superadmin.login');
         }
 
