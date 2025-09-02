@@ -220,6 +220,8 @@ class SuperAdminController extends Controller
         }
     }
 
+    
+
     public function sendWarning(Request $request, $userId)
     {
         try {
@@ -258,4 +260,187 @@ class SuperAdminController extends Controller
             'message' => 'Authenticated as superadmin'
         ]);
     }
+
+    // Add these methods to your SuperAdminController
+
+public function usersIndex()
+{
+    return view('superadmin.users');
+}
+
+public function issuesIndex()
+{
+    return view('issues');
+}
+
+public function verificationIndex()
+{
+    return view('verification');
+}
+
+public function notificationsIndex()
+{
+    return view('notifications');
+}
+
+public function settingsIndex()
+{
+    return view('settings');
+}
+
+public function getUserPosts($userId)
+{
+    try {
+        $user = User::where('user_id', $userId)->firstOrFail();
+        $posts = $user->posts()->get()->map(function ($post) {
+            return [
+                'id' => $post->id,
+                'title' => $post->title,
+                'description' => $post->description,
+                'created_at' => $post->created_at,
+            ];
+        });
+        return response()->json([
+            'status' => 'success',
+            'posts' => $posts
+        ]);
+    } catch (\Exception $e) {
+        Log::error('SuperAdmin getUserPosts error: ' . $e->getMessage());
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to fetch user posts',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+// Add these methods to your SuperAdminController
+
+public function getUserAnalytics(Request $request)
+{
+    try {
+        // Get user growth for last 14 days
+        $userGrowth = User::select(
+            \DB::raw('DATE(created_at) as date'),
+            \DB::raw('COUNT(*) as count')
+        )
+        ->where('created_at', '>=', now()->subDays(14))
+        ->groupBy('date')
+        ->orderBy('date')
+        ->get();
+
+        // Fill in missing dates with 0 counts
+        $userGrowthData = [];
+        $dates = [];
+        for ($i = 13; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $dates[] = $date;
+            $userGrowthData[$date] = 0;
+        }
+
+        foreach ($userGrowth as $growth) {
+            $formattedDate = \Carbon\Carbon::parse($growth->date)->format('Y-m-d');
+            $userGrowthData[$formattedDate] = $growth->count;
+        }
+
+        // Get verification stats
+        $verified = User::where('is_verified', true)->count();
+        $unverified = User::where('is_verified', false)->count();
+
+        // Get recent users (last 5)
+        $recentUsers = User::latest()->take(5)->get()->map(function ($user) {
+            return [
+                'user_id' => $user->user_id,
+                'username' => $user->username,
+                'created_at' => $user->created_at->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'user_growth' => [
+                'labels' => $dates,
+                'data' => array_values($userGrowthData)
+            ],
+            'verification_stats' => [
+                'verified' => $verified,
+                'unverified' => $unverified
+            ],
+            'recent_users' => $recentUsers
+        ]);
+    } catch (\Exception $e) {
+        Log::error('SuperAdmin getUserAnalytics error: ' . $e->getMessage());
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to fetch analytics',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+public function getUserGrowthChart(Request $request)
+{
+    try {
+        $days = $request->input('days', 14); // Default to 14 days
+
+        $userGrowth = User::select(
+            \DB::raw('DATE(created_at) as date'),
+            \DB::raw('COUNT(*) as count')
+        )
+        ->where('created_at', '>=', now()->subDays($days))
+        ->groupBy('date')
+        ->orderBy('date')
+        ->get();
+
+        // Fill in missing dates
+        $labels = [];
+        $data = [];
+
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $labels[] = $date;
+            $data[] = 0;
+        }
+
+        foreach ($userGrowth as $growth) {
+            $formattedDate = \Carbon\Carbon::parse($growth->date)->format('Y-m-d');
+            $index = array_search($formattedDate, $labels);
+            if ($index !== false) {
+                $data[$index] = $growth->count;
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'labels' => $labels,
+            'data' => $data
+        ]);
+    } catch (\Exception $e) {
+        Log::error('SuperAdmin getUserGrowthChart error: ' . $e->getMessage());
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to fetch user growth data'
+        ], 500);
+    }
+}
+
+public function getVerificationStats()
+{
+    try {
+        $verified = User::where('is_verified', true)->count();
+        $unverified = User::where('is_verified', false)->count();
+
+        return response()->json([
+            'status' => 'success',
+            'verified' => $verified,
+            'unverified' => $unverified
+        ]);
+    } catch (\Exception $e) {
+        Log::error('SuperAdmin getVerificationStats error: ' . $e->getMessage());
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to fetch verification stats'
+        ], 500);
+    }
+}
 }

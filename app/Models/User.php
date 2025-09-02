@@ -32,6 +32,7 @@ class User extends Authenticatable
         'citizenship_front_image',
         'citizenship_back_image',
         'profile_image',
+        'verification_status',
     ];
 
     protected $casts = [
@@ -54,20 +55,27 @@ class User extends Authenticatable
         return $this->password_hash;
     }
 
+   public function getProfileImageAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+
+        return filter_var($value, FILTER_VALIDATE_URL) ? $value : Storage::url($value);
+    }
+
     public function getCitizenshipFrontImageAttribute($value)
     {
-        return $value ? Storage::url($value) : null;
+        if (!$value) return null;
+        return filter_var($value, FILTER_VALIDATE_URL) ? $value : Storage::url($value);
     }
 
     public function getCitizenshipBackImageAttribute($value)
     {
-        return $value ? Storage::url($value) : null;
+        if (!$value) return null;
+        return filter_var($value, FILTER_VALIDATE_URL) ? $value : Storage::url($value);
     }
 
-    public function getProfileImageAttribute($value)
-    {
-        return $value ? Storage::url($value) : null;
-    }
 
     public function posts()
     {
@@ -78,4 +86,5 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(User::class, 'likes', 'user_id', 'liked_user_id')->withTimestamps();
     }
+
 }

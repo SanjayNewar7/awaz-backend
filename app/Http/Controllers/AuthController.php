@@ -33,6 +33,25 @@ class AuthController extends Controller
         return view('dashboard');
     }
 
+    public function users()
+    {
+        return view('users');
+    }
+
+    public function analytics()
+    {
+        return view('analytics');
+    }
+
+    public function issues()
+    {
+        return view('issue');
+    }
+    public function verification()
+    {
+        return view('verification');
+    }
+
     public function logout(Request $request)
     {
         return redirect()->route('superadmin.login');
@@ -321,6 +340,61 @@ class AuthController extends Controller
         }
     }
 
+
+    public function getUserdetail($userId)
+{
+    try {
+        $user = User::findOrFail($userId);
+
+        // Helper to format image URLs
+        $formatImage = function ($path) {
+            if (!$path) {
+                return null;
+            }
+
+            // If it's already a full URL, just return it
+            if (preg_match('/^http(s)?:\/\//', $path)) {
+                return $path;
+            }
+
+            // Otherwise, make it a proper asset URL
+            return asset('storage/' . ltrim(str_replace('storage/', '', $path), '/'));
+        };
+
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'user_id' => $user->user_id,
+                'username' => $user->username,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'district' => $user->district,
+                'city' => $user->city,
+                'ward' => $user->ward,
+                'area_name' => $user->area_name,
+                'phone_number' => $user->phone_number,
+                'email' => $user->email,
+                'bio' => $user->bio ?? 'Hello, Namaste everyone',
+                'profile_image' => $formatImage($user->profile_image),
+                'posts_count' => $user->posts()->count(),
+                'citizenship_id_number' => $user->citizenship_id_number,
+                'gender' => (string) $user->gender,
+                'likes_count' => 0,
+                'is_verified' => (bool) $user->is_verified,
+                'agreed_to_terms' => (bool) $user->agreed_to_terms,
+                'citizenship_front_image' => $formatImage($user->citizenship_front_image),
+                'citizenship_back_image' => $formatImage($user->citizenship_back_image),
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'User not found'
+        ], 404);
+    }
+}
+
+
     public function searchUsers(Request $request)
     {
         try {
@@ -345,6 +419,129 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    public function updateUserweb(Request $request, $userId)
+    {
+        try {
+            $user = User::where('user_id', $userId)->firstOrFail();
+
+            $validated = $request->validate([
+                'username' => 'sometimes|string|max:50|unique:users,username,' . $user->user_id . ',user_id',
+                'first_name' => 'sometimes|string|max:50',
+                'last_name' => 'sometimes|string|max:50',
+                'email' => 'sometimes|email|max:100|unique:users,email,' . $user->user_id . ',user_id',
+                'phone_number' => 'sometimes|string|size:10',
+                'district' => 'sometimes|string|max:50',
+                'city' => 'sometimes|string|max:50',
+                'ward' => 'sometimes|integer',
+                'area_name' => 'sometimes|string|max:100',
+                'citizenship_id_number' => 'sometimes|string|max:50|unique:users,citizenship_id_number,' . $user->user_id . ',user_id',
+                'gender' => 'sometimes|in:Male,Female,Other',
+                'is_verified' => 'sometimes|boolean',
+                'agreed_to_terms' => 'sometimes|boolean',
+                'citizenship_front_image' => 'sometimes|string',
+                'citizenship_back_image' => 'sometimes|string',
+                'profile_image' => 'sometimes|string',
+            ]);
+
+            // Handle image uploads
+            $profileImagePath = $user->profile_image;
+            if (isset($validated['profile_image'])) {
+                if ($user->profile_image && !in_array($user->profile_image, ['images/users/male_avatar.png', 'images/users/female_avatar.png'])) {
+                    Storage::disk('public')->delete($user->profile_image);
+                }
+                $profileImagePath = $this->saveBase64Image($validated['profile_image'], 'users/profile_');
+            } elseif (isset($validated['gender']) && $validated['gender'] !== $user->gender) {
+                $profileImagePath = $validated['gender'] === 'Male' ? 'images/users/male_avatar.png' : 'images/users/female_avatar.png';
+            }
+
+            $citizenshipFrontImagePath = $user->citizenship_front_image;
+            if (isset($validated['citizenship_front_image'])) {
+                if ($user->citizenship_front_image) {
+                    Storage::disk('public')->delete($user->citizenship_front_image);
+                }
+                $citizenshipFrontImagePath = $this->saveBase64Image($validated['citizenship_front_image'], 'users/citizenship_front_');
+            }
+
+            $citizenshipBackImagePath = $user->citizenship_back_image;
+            if (isset($validated['citizenship_back_image'])) {
+                if ($user->citizenship_back_image) {
+                    Storage::disk('public')->delete($user->citizenship_back_image);
+                }
+                $citizenshipBackImagePath = $this->saveBase64Image($validated['citizenship_back_image'], 'users/citizenship_back_');
+            }
+
+            // Update user
+            $user->update([
+                'username' => $validated['username'] ?? $user->username,
+                'first_name' => $validated['first_name'] ?? $user->first_name,
+                'last_name' => $validated['last_name'] ?? $user->last_name,
+                'email' => $validated['email'] ?? $user->email,
+                'phone_number' => $validated['phone_number'] ?? $user->phone_number,
+                'district' => $validated['district'] ?? $user->district,
+                'city' => $validated['city'] ?? $user->city,
+                'ward' => $validated['ward'] ?? $user->ward,
+                'area_name' => $validated['area_name'] ?? $user->area_name,
+                'citizenship_id_number' => $validated['citizenship_id_number'] ?? $user->citizenship_id_number,
+                'gender' => $validated['gender'] ?? $user->gender,
+                'is_verified' => $validated['is_verified'] ?? $user->is_verified,
+                'agreed_to_terms' => $validated['agreed_to_terms'] ?? $user->agreed_to_terms,
+                'citizenship_front_image' => $citizenshipFrontImagePath,
+                'citizenship_back_image' => $citizenshipBackImagePath,
+                'profile_image' => $profileImagePath,
+            ]);
+
+            // Format image URLs for response
+            $formatImage = function ($path) {
+                if (!$path) return null;
+                return preg_match('/^http(s)?:\/\//', $path) ? $path : asset('storage/' . ltrim(str_replace('storage/', '', $path), '/'));
+            };
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'User updated successfully',
+                'user' => [
+                    'user_id' => $user->user_id,
+                    'username' => $user->username,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'district' => $user->district,
+                    'city' => $user->city,
+                    'ward' => $user->ward,
+                    'area_name' => $user->area_name,
+                    'phone_number' => $user->phone_number,
+                    'email' => $user->email,
+                    'bio' => $user->bio ?? 'Hello, Namaste everyone',
+                    'profile_image' => $formatImage($user->profile_image),
+                    'citizenship_id_number' => $user->citizenship_id_number,
+                    'gender' => (string) $user->gender,
+                    'is_verified' => (bool) $user->is_verified,
+                    'agreed_to_terms' => (bool) $user->agreed_to_terms,
+                    'citizenship_front_image' => $formatImage($user->citizenship_front_image),
+                    'citizenship_back_image' => $formatImage($user->citizenship_back_image),
+                    'posts_count' => $user->posts()->count(),
+                    'likes_count' => $user->likes_count ?? 0,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ]
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('SuperAdmin updateUser error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update user',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
 
     public function userLogin(Request $request)
     {
@@ -406,6 +603,7 @@ class AuthController extends Controller
                     'is_verified' => (bool)$user->is_verified,
                     'likes_count' => $user->likes_count ?? 0,
                     'posts_count' => $user->posts_count ?? 0,
+                    'verification_status' => $user->verification_status,
                 ]
             ]);
         } catch (\Exception $e) {

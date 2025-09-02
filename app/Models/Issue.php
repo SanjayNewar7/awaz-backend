@@ -30,12 +30,12 @@ class Issue extends Model
     ];
 
     public function getPhoto1Attribute($value)
-    {
-        return $value ? Storage::url($value) : null;
-    }
+{
+    return $value ? asset('storage/' . $value) : null;
+}
 
-    public function getPhoto2Attribute($value)
-    {
-        return $value ? Storage::url($value) : null;
-    }
+public function getPhoto2Attribute($value)
+{
+    return $value ? asset('storage/' . $value) : null;
+}
 }
