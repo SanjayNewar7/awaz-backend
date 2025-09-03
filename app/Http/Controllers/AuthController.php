@@ -52,6 +52,11 @@ class AuthController extends Controller
         return view('verification');
     }
 
+    public function notifications()
+    {
+        return view('notification');
+    }
+
     public function logout(Request $request)
     {
         return redirect()->route('superadmin.login');
