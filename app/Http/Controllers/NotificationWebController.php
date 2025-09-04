@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Issue;
 use App\Models\User;
 use App\Models\SystemNotification;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class NotificationWebController extends Controller
@@ -96,5 +97,44 @@ class NotificationWebController extends Controller
         }
 
         return redirect()->route('notifications.index')->with('success', 'Notification sent successfully.');
+    }
+
+    public function indexApi()
+    {
+        $user = Auth::user();
+        $notifications = SystemNotification::where('user_id', $user->user_id)
+            ->with('issue:id,heading,status')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($notifications);
+    }
+
+    /**
+     * Mark a specific system notification as read (API).
+     */
+    public function markSystemNotificationAsRead($id)
+    {
+        $notification = SystemNotification::findOrFail($id);
+
+        if ($notification->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $notification->is_read = true;
+        $notification->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Mark all system notifications as read for the authenticated user (API).
+     */
+    public function markAllSystemNotificationsAsRead()
+    {
+        SystemNotification::where('user_id', Auth::id())
+            ->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
     }
 }

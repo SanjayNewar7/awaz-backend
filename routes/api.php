@@ -9,6 +9,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SuperAdminController;
+use App\Http\Controllers\NotificationWebController;
 
 Route::prefix('users')->middleware('api')->group(function () {
     Route::get('/', [UserController::class, 'index']);
@@ -49,4 +50,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::get('/notifications', [NotificationController::class, 'index'])->name('api.notifications');
+    Route::post('/users/me/update-citizenship-images', [AuthController::class, 'updateCitizenshipImages']);
+
+
+     Route::get('/system-notifications', [NotificationWebController::class, 'indexApi'])->name('api.system-notifications');
+    Route::post('/system-notifications/{id}/read', [NotificationWebController::class, 'markSystemNotificationAsRead']);
+    Route::post('/system-notifications/read-all', [NotificationWebController::class, 'markAllSystemNotificationsAsRead']);
+
 });

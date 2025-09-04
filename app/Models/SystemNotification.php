@@ -18,6 +18,11 @@ class SystemNotification extends Model
         'area_name',
         'issue_id',
         'image',
+        'is_read',
+    ];
+
+     protected $casts = [
+        'is_read' => 'boolean', // Cast to boolean
     ];
 
     public function issue()

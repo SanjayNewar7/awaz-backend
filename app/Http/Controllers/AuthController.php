@@ -246,6 +246,72 @@ class AuthController extends Controller
             ], 500);
         }
     }
+    public function updateCitizenshipImages(Request $request)
+{
+    try {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
+
+        $validated = $request->validate([
+            'citizenship_front_image' => 'required|string',
+            'citizenship_back_image' => 'required|string',
+        ]);
+
+        // Delete old images if exist
+        if ($user->citizenship_front_image) {
+            Storage::disk('public')->delete($user->citizenship_front_image);
+        }
+        if ($user->citizenship_back_image) {
+            Storage::disk('public')->delete($user->citizenship_back_image);
+        }
+
+        // Save new images
+
+            $citizenshipFrontImagePath = $user->citizenship_front_image;
+            if (isset($validated['citizenship_front_image'])) {
+                if ($user->citizenship_front_image) {
+                    Storage::disk('public')->delete($user->citizenship_front_image);
+                }
+                $citizenshipFrontImagePath = $this->saveBase64Image($validated['citizenship_front_image'], 'users/citizenship_front_');
+            }
+
+            $citizenshipBackImagePath = $user->citizenship_back_image;
+            if (isset($validated['citizenship_back_image'])) {
+                if ($user->citizenship_back_image) {
+                    Storage::disk('public')->delete($user->citizenship_back_image);
+                }
+                $citizenshipBackImagePath = $this->saveBase64Image($validated['citizenship_back_image'], 'users/citizenship_back_');
+            }
+
+        $user->update([
+            'citizenship_front_image' => $citizenshipFrontImagePath,
+            'citizenship_back_image' => $citizenshipBackImagePath,
+            'verification_status' => 'pending',
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Citizenship images updated successfully',
+            'user' => [
+                'citizenship_front_image' => asset('storage/' . $citizenshipFrontImagePath),
+                'citizenship_back_image' => asset('storage/' . $citizenshipBackImagePath),
+            ]
+        ], 200);
+    } catch (\Exception $e) {
+        Log::error('Citizenship image update error: ' . $e->getMessage());
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to update citizenship images',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
 
     public function changePassword(Request $request)
     {
@@ -334,7 +400,8 @@ class AuthController extends Controller
                     'bio' => $user->bio ?? 'Hello, Namaste everyone',
                     'profile_image' => $user->profile_image,
                     'posts_count' => $user->posts()->count(),
-                    'likes_count' => 0
+                    'likes_count' => $user->likedBy()->count(),
+                    'verification_status' => $user->is_verified ? 'verified' : 'pending',
                 ]
             ]);
         } catch (\Exception $e) {
